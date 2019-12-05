@@ -33,7 +33,7 @@ class User:
 class Customer(User):
     """Stores customer data and functionality"""
     def __init__(self, cid, first_name, last_name, address):
-        super(User, self).__init__(first_name, last_name, address)
+        super().__init__(first_name, last_name, address)
 
         # Customer Id (primary key)
         self.customer_id = cid
@@ -90,7 +90,7 @@ class Admin(User):
     """Administrator account and controls"""
     def __init__(self, ad_id: int, first_name: str, last_name: str, address: str,
                  username: str, password: str, full_rights: bool):
-        super(User, self).__init__(first_name, last_name, address)
+        super().__init__(first_name, last_name, address)
 
         # Set the id, (primary key)
         self.admin_id = ad_id
