@@ -205,10 +205,12 @@ class Connection:
     def create_account(self, account_name: str, account_number: int, interest_rate: float, overdraft_limit: int,
                        customer_id: int):
         """Create a new account"""
-        sql = f"INSERT INTO accounts (account_name, account_number, balance, interest_rate, overdraft_limit) " \
-              f"VALUES ('{account_name}', {account_number}, 0, {interest_rate}, {overdraft_limit})"
+        sql = f"INSERT INTO accounts (account_name, account_number, balance, interest_rate, overdraft_limit, customer_id) " \
+              f"VALUES ('{account_name}', {account_number}, 0, {interest_rate}, {overdraft_limit}, {customer_id})"
 
-        return self.__query(sql)
+        res =  self.__query(sql)
+        self.conn.commit()
+        return res
 
     def create_admin_account(self, fname: str, lname: str, addr: str,
                              username: str, pass_hash: str, full_rights: int) -> bool:

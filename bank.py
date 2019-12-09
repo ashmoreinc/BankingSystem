@@ -108,8 +108,29 @@ class BankingSystem:
         self.admin = None
         self.logged_in = False
 
+    def create_new_account(self, account_name: str, interest_rate: float,
+                           overdraft_limit: int, customer_id: int):
+        """Create a new account and generate a new, unused account number"""
+
+        if not self.logged_in:
+            return False
+        account_num = None
+        unique_num_found = False
+        while not unique_num_found:
+            # Generate a new, 16 digit number for the account number
+            account_num = randint(1000000000000000, 9999999999999999)
+
+            # Check if number is used
+            accs = self.connection.get_accounts(account_number=account_num)
+            if len(accs) == 0:
+                unique_num_found = True
+
+        return self.connection.create_account(account_name, account_num, interest_rate, overdraft_limit, customer_id)
+
 
 if __name__ == "__main__":
     sys = BankingSystem()
 
-    stat = sys.login('ashmoreinc', 'hunter2')
+    sys.login('ashmoreinc', 'hunter2')
+
+    sys.create_new_account("Saver", 2.5, 0, 1)
