@@ -12,6 +12,7 @@ class BankingSystem:
         self.logged_in = False
         self.admin = None
 
+    # Hashing systems
     # adapted from https://www.vitoshacademy.com/hashing-passwords-in-python/
     @staticmethod
     def hash_password(password):
@@ -44,6 +45,8 @@ class BankingSystem:
         passhash = binascii.hexlify(passhash).decode('ascii')
 
         return stored_hash == passhash
+
+    # Admin and login control
 
     def create_admin(self, fname, lname, addr, username, password, full_rights):
         """Create a new admin account with the given details"""
@@ -108,6 +111,8 @@ class BankingSystem:
         self.admin = None
         self.logged_in = False
 
+    # Account and customer control
+
     def create_new_account(self, account_name: str, interest_rate: float,
                            overdraft_limit: int, customer_id: int):
         """Create a new account and generate a new, unused account number"""
@@ -127,10 +132,16 @@ class BankingSystem:
 
         return self.connection.create_account(account_name, account_num, interest_rate, overdraft_limit, customer_id)
 
+    def creat_new_customer(self, fname: str, lname: str, addr: str):
+        """Create a new customer"""
+        if not self.logged_in:
+            return False
+
+        return self.connection.create_customer(fname, lname, addr)
+
 
 if __name__ == "__main__":
     sys = BankingSystem()
+    # sys.login('ashmoreinc', 'hunter2')
 
-    sys.login('ashmoreinc', 'hunter2')
-
-    sys.create_new_account("Saver", 2.5, 0, 1)
+    sys.creat_new_customer('James', 'Franco', 'Somewhere else')

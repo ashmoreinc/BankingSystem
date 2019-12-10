@@ -38,6 +38,8 @@ class Connection:
             print("An error occurred when querying the database.")
             return False
 
+    # Getters
+
     def get_customers(self, cid=None, fname=None, lname=None, address=None,
                       must_include_all: bool = False, return_as_dict: bool = False) -> list:
         """Return a list of customers from the database where all provided values are found"""
@@ -202,6 +204,17 @@ class Connection:
                 print("Query issue")
                 return []
 
+    # Create new table entries
+
+    def create_customer(self, fname: str, lname: str, addr: str):
+        """Create a new table entry for the customer"""
+        sql = f"INSERT INTO customers (first_name, last_name, address)" \
+              f"VALUES ('{fname}', '{lname}', '{addr}')"
+
+        res = self.__query(sql)
+        self.conn.commit()
+        return res
+
     def create_account(self, account_name: str, account_number: int, interest_rate: float, overdraft_limit: int,
                        customer_id: int):
         """Create a new account"""
@@ -221,6 +234,7 @@ class Connection:
         res = self.__query(sql)
         self.conn.commit()
         return res
+
 
 
 if __name__ == "__main__":
