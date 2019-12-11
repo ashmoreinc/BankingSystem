@@ -4,6 +4,26 @@ from connection import Connection
 from random import randint
 
 
+# Decorators
+def require_login(function):
+    # Only allows the function to run if the logged_in attr is True
+    def wrapper(self, *args, **kwargs):
+        if self.logged_in:
+            return function(self, *args, **kwargs)
+
+    return wrapper
+
+
+def require_full_rights(function):
+    # Only allows the function to run if the logged_in attr is true and the admin attr has full rights
+    def wrapper(self, *args, **kwargs):
+        if self.logged_in:
+            if self.admin.has_full_rights():
+                return function(self, *args, **kwargs)
+
+    return wrapper
+
+
 class BankingSystem:
     """Class that handles the banking system"""
     def __init__(self):
@@ -47,19 +67,9 @@ class BankingSystem:
         return stored_hash == passhash
 
     # Admin and login control
-
+    @require_full_rights
     def create_admin(self, fname, lname, addr, username, password, full_rights):
         """Create a new admin account with the given details"""
-
-        # Only admins with full rights can create a new admin
-        # Return false if not, or if not logged in
-        if self.logged_in:
-            if not self.admin.has_full_rights():
-                print("Rights issues")
-                return False
-        else:
-            print("Log in issues")
-            return False
 
         # Return false if there's no db connection
         if not self.connection.connected:
@@ -112,13 +122,10 @@ class BankingSystem:
         self.logged_in = False
 
     # Account and customer control
-
+    @require_login
     def create_new_account(self, account_name: str, interest_rate: float,
                            overdraft_limit: int, customer_id: int):
         """Create a new account and generate a new, unused account number"""
-
-        if not self.logged_in:
-            return False
         account_num = None
         unique_num_found = False
         while not unique_num_found:
@@ -132,16 +139,38 @@ class BankingSystem:
 
         return self.connection.create_account(account_name, account_num, interest_rate, overdraft_limit, customer_id)
 
+    @require_login
     def creat_new_customer(self, fname: str, lname: str, addr: str):
         """Create a new customer"""
-        if not self.logged_in:
-            return False
-
         return self.connection.create_customer(fname, lname, addr)
+
+    @require_login
+    def withdraw(self, acc_id: int, amount: int):
+        """Withdraw money from an account"""
+
+        balance = self.connection.get_balance(account_id=acc_id)
+        overdraft = self.connection.get_overdraft(account_id=acc_id)
+
+        new_bal = balance - amount
+
+        if new_bal < 0 - overdraft:
+            return False
+        else:
+            return self.connection.change_balance(new_bal, account_id=acc_id)
+
+    @require_login
+    def deposit(self, acc_id: int, amount: int):
+        """Add money to the account"""
+
+        balance = self.connection.get_balance(account_id=acc_id)
+
+        new_bal = balance + amount
+
+        return self.connection.change_balance(new_bal, account_id=acc_id)
 
 
 if __name__ == "__main__":
     sys = BankingSystem()
-    # sys.login('ashmoreinc', 'hunter2')
-
-    sys.creat_new_customer('James', 'Franco', 'Somewhere else')
+    # Test log in
+    # Test full rights account
+    sys.login('ashmoreinc', 'hunter2')

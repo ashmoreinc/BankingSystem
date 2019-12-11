@@ -204,6 +204,85 @@ class Connection:
                 print("Query issue")
                 return []
 
+    def get_balance(self, account_id: int = None, account_number: int = None) -> int:
+        """Get the balance of an account"""
+        if account_id is None and account_number is None:
+            return False
+
+        sql = "SELECT balance FROM accounts WHERE "
+
+        if account_id is not None:
+            sql += f"id={account_id} AND "
+
+        if account_number is not None:
+            sql += f"account_number={account_number}"
+
+        if sql[-4:] == "AND ":
+            sql = sql[:-4]
+
+        if self.__query(sql):
+            ret = self.cursor.fetchall()
+            if len(ret) != 1:
+                print("Too many entries")
+                return None
+            else:
+                data = ret[0]  # returns the whole row
+                return int(data[0])  # Just return the first value, which should be balance
+        else:
+            return None
+
+    def get_overdraft(self, account_id: int = None, account_number: int = None) -> int:
+        """Get the overdraft limit of an account"""
+        if account_id is None and account_number is None:
+            return False
+
+        sql = "SELECT overdraft_limit FROM accounts WHERE "
+
+        if account_id is not None:
+            sql += f"id={account_id} AND "
+
+        if account_number is not None:
+            sql += f"account_number={account_number}"
+
+        if sql[-4:] == "AND ":
+            sql = sql[:-4]
+
+        if self.__query(sql):
+            ret = self.cursor.fetchall()
+            if len(ret) != 1:
+                print("Too many entries")
+                return None
+            else:
+                data = ret[0]  # returns the whole row
+                return int(data[0])  # Just return the first value, which should be balance
+        else:
+            return None
+
+    # Update table entries
+    def change_balance(self, new_balance: int, account_id: int=None, account_number = None):
+        """Change the balance data of an account"""
+        if account_id is None and account_number is None:
+            return False
+
+        sql = f"UPDATE accounts " \
+              f"SET balance={new_balance} " \
+              f"WHERE "
+
+        if account_id is not None:
+            sql += f"id={account_id} AND "
+
+        if account_number is not None:
+            sql += f"account_number={account_number}"
+
+        if sql[-4:] == "AND ":
+            sql = sql[:-4]
+
+        if self.__query(sql):
+            self.conn.commit()
+            return True
+        else:
+            return False
+
     # Create new table entries
 
     def create_customer(self, fname: str, lname: str, addr: str):
