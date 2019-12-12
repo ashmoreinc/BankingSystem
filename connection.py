@@ -24,27 +24,25 @@ class Connection:
 
         self.connected = False
 
-    def __query(self, query: str) -> bool:
+    def __query(self, query: str):
         """Query the data base and return the data"""
         if not self.connected:
-            print("Not connected to database.")
-            return False
+            return False, "Not connected to database."
 
         try:
             self.cursor.execute(query)
-            return True
+            return True, "Successfully executed query"
         except Exception as e:
             print(str(e))
-            print("An error occurred when querying the database.")
-            return False
+            return False, "An error occurred when querying the database."
 
     # Getters
 
     def get_customers(self, cid=None, fname=None, lname=None, address=None,
-                      must_include_all: bool = False, return_as_dict: bool = False) -> list:
+                      must_include_all: bool = False, return_as_dict: bool = False) -> tuple:
         """Return a list of customers from the database where all provided values are found"""
         if cid is None and fname is None and lname is None and address is None:
-            return []
+            return [], "No search data provided."
         else:
             sql = "SELECT id, first_name, last_name, address FROM customers WHERE "
 
@@ -54,44 +52,46 @@ class Connection:
                 op = 'OR'
 
             if cid is not None:
-                sql += "id=" + str(cid) + " " + op +" "
+                sql += f"id={str(cid)} {op} "
 
             if fname is not None:
-                sql += "first_name='" + str(fname) + "' " + op + " "
+                sql += f"first_name='{str(fname)}' {op} "
 
             if lname is not None:
-                sql += "last_name='" + str(lname) + "' " + op + " "
+                sql += f"last_name='{str(lname)}' {op} "
 
             if address is not None:
-                sql += "address='" + str(address) + "' " + op + " "
+                sql += f"address='{str(address)}' {op} "
 
             # Remove last 4 letters to remove the added operation (op) and two spaces
             sql = sql[:-(len(op) + 2)]
 
-            if self.__query(sql):
+            query_status, query_reply = self.__query(sql)
+
+            if query_status:
                 # Get results and convert into a dictionary
 
                 results = []
                 for row in self.cursor.fetchall():
 
                     if return_as_dict:
-                        results.append(d)
                         d = {'id': row[0], 'first_name': row[1], 'last_name': row[2], 'address': row[3]}
+                        results.append(d)
                     else:
                         cust = Customer(row[0], row[1], row[2], row[3])
                         results.append(cust)
 
-                return results
+                return results, f"Query ran successfully. {len(results)} entries found."
             else:
-                return []
+                return [], query_reply
 
     def get_accounts(self, accid=None, account_name=None, account_number=None, cust_id=None,
                      balance=None, interest_rate=None, overdraft_limit=None,
-                     must_include_all: bool = False, return_as_dict: bool = False) -> list:
+                     must_include_all: bool = False, return_as_dict: bool = False) -> tuple:
         """Return a list of accounts from the database where all provided values are found"""
         if accid is None and account_name is None and balance is None and interest_rate is None \
                 and overdraft_limit is None and cust_id is None:
-            return []
+            return [], "No search data provided."
         else:
             sql = "SELECT id, account_name, " \
                   "account_number, balance, interest_rate, overdraft_limit, customer_id FROM accounts WHERE "
@@ -125,7 +125,9 @@ class Connection:
             # remove the operator (op) and two space from the end
             sql = sql[:-(len(op) + 2)]
 
-            if self.__query(sql):
+            query_status, query_reply = self.__query(sql)
+
+            if query_status:
                 # Get results and convert into a dictionary
                 results = []
                 for row in self.cursor.fetchall():
@@ -136,27 +138,27 @@ class Connection:
                 if not return_as_dict:
                     class_results = []
                     for res in results:
-                        custs = self.get_customers(cid=res["customer_id"])
+                        custs, reply = self.get_customers(cid=res["customer_id"])
                         if len(custs) != 1:
+                            print(custs)
                             print(f'Found account id:{res["id"]}, though it is connected to {len(custs)} customers.')
                         else:
                             acc = BankAccount(res["id"], res["account_name"], res["balance"],
                                               res["interest_rate"], res["overdraft_limit"],
                                               res["account_number"], custs[0])
                             class_results.append(acc)
-                    return class_results
-                return results
+                    return class_results, f"Query ran successfully. {len(class_results)} entries found"
+                return results, f"Query ran successfully. {len(results)} entries found"
             else:
-                return []
+                return [], query_reply
 
     def get_admin(self, ad_id: int = None, first_name: str = None, last_name: str = None, address: str = None,
                   username: str = None, full_rights: bool = None,
-                  must_include_all: bool = False, return_as_dict: bool = False) -> list:
+                  must_include_all: bool = False, return_as_dict: bool = False) -> tuple:
         """Fetch admin accounts from database"""
         if ad_id is None and first_name is None and last_name is None and address is None \
                 and username is None and full_rights is None:
-            print("Nothing set.")
-            return []
+            return [], "No search data has been provided."
         else:
             sql = "SELECT id, first_name, last_name, address, username, password_hash, full_rights FROM admins WHERE "
 
@@ -186,7 +188,9 @@ class Connection:
             # Remove the operator and 2 spaces from the end
             sql = sql[:-(len(op) + 2)]
 
-            if self.__query(sql):
+            query_status, query_reply = self.__query(sql)
+
+            if query_status:
                 # Get results and convert them into the correct form
                 results = []
                 for row in self.cursor.fetchall():
@@ -199,15 +203,14 @@ class Connection:
                     else:
                         admin = Admin(row[0], row[1], row[2], row[3], row[4], row[5], row[6])
                         results.append(admin)
-                return results
+                return results, f"Query ran successfully. {len(results)} entries found."
             else:
-                print("Query issue")
-                return []
+                return [], query_reply
 
-    def get_balance(self, account_id: int = None, account_number: int = None) -> int:
+    def get_balance(self, account_id: int = None, account_number: int = None) -> tuple:
         """Get the balance of an account"""
         if account_id is None and account_number is None:
-            return False
+            return None, "No search data provided."
 
         sql = "SELECT balance FROM accounts WHERE "
 
@@ -220,21 +223,23 @@ class Connection:
         if sql[-4:] == "AND ":
             sql = sql[:-4]
 
-        if self.__query(sql):
+        query_status, query_reply = self.__query(sql)
+
+        if query_status:
             ret = self.cursor.fetchall()
             if len(ret) != 1:
                 print("Too many entries")
-                return None
+                return None, f"{len(ret)}, entries found."
             else:
                 data = ret[0]  # returns the whole row
-                return int(data[0])  # Just return the first value, which should be balance
+                return int(data[0]), "Query returned data"  # Just return the first value, which should be balance
         else:
-            return None
+            return None, query_reply
 
-    def get_overdraft(self, account_id: int = None, account_number: int = None) -> int:
+    def get_overdraft(self, account_id: int = None, account_number: int = None) -> tuple:
         """Get the overdraft limit of an account"""
         if account_id is None and account_number is None:
-            return False
+            return None, "No search data provided"
 
         sql = "SELECT overdraft_limit FROM accounts WHERE "
 
@@ -247,22 +252,23 @@ class Connection:
         if sql[-4:] == "AND ":
             sql = sql[:-4]
 
-        if self.__query(sql):
+        query_status, query_reply = self.__query(sql)
+
+        if query_status:
             ret = self.cursor.fetchall()
             if len(ret) != 1:
-                print("Too many entries")
-                return None
+                return None, f"{len(ret)} entries returned."
             else:
                 data = ret[0]  # returns the whole row
-                return int(data[0])  # Just return the first value, which should be balance
+                return int(data[0]), "Query ran successfully."  # Just return the first value, which should be balance
         else:
-            return None
+            return None, query_reply
 
     # Update table entries
-    def change_balance(self, new_balance: int, account_id: int=None, account_number = None):
+    def change_balance(self, new_balance: int, account_id: int = None, account_number: int = None) -> tuple:
         """Change the balance data of an account"""
         if account_id is None and account_number is None:
-            return False
+            return False, "No search data provided."
 
         sql = f"UPDATE accounts " \
               f"SET balance={new_balance} " \
@@ -277,15 +283,16 @@ class Connection:
         if sql[-4:] == "AND ":
             sql = sql[:-4]
 
-        if self.__query(sql):
+        query_status, query_reply = self.__query(sql)
+
+        if query_status:
             self.conn.commit()
-            return True
+            return True, "Updated."
         else:
-            return False
+            return False, query_reply
 
     # Create new table entries
-
-    def create_customer(self, fname: str, lname: str, addr: str):
+    def create_customer(self, fname: str, lname: str, addr: str) -> tuple:
         """Create a new table entry for the customer"""
         sql = f"INSERT INTO customers (first_name, last_name, address)" \
               f"VALUES ('{fname}', '{lname}', '{addr}')"
@@ -295,17 +302,17 @@ class Connection:
         return res
 
     def create_account(self, account_name: str, account_number: int, interest_rate: float, overdraft_limit: int,
-                       customer_id: int):
+                       customer_id: int) -> tuple:
         """Create a new account"""
         sql = f"INSERT INTO accounts (account_name, account_number, balance, interest_rate, overdraft_limit, customer_id) " \
               f"VALUES ('{account_name}', {account_number}, 0, {interest_rate}, {overdraft_limit}, {customer_id})"
 
-        res =  self.__query(sql)
+        res = self.__query(sql)
         self.conn.commit()
         return res
 
     def create_admin_account(self, fname: str, lname: str, addr: str,
-                             username: str, pass_hash: str, full_rights: int) -> bool:
+                             username: str, pass_hash: str, full_rights: int) -> tuple:
         """add an admin account"""
         sql = f"INSERT INTO admins (first_name, last_name, address, username, password_hash, full_rights)" \
               f"VALUES ('{fname}', '{lname}', '{addr}', '{username}', '{pass_hash}', '{full_rights}')"
@@ -315,15 +322,14 @@ class Connection:
         return res
 
 
-
 if __name__ == "__main__":
     # Testing customer lookup and account retrieval
     print("Testing data retrieval.")
     c = Connection()
 
-    customers = c.get_customers(fname="Cain", must_include_all=True)
+    customers = c.get_customers(fname="Cain", must_include_all=True)[0]
     for cust in customers:
         print(cust.get_first_name(), cust.get_last_name())
-        accounts = c.get_accounts(cust_id=cust.get_customer_id())
+        accounts = c.get_accounts(cust_id=cust.get_customer_id())[0]
         for account in accounts:
             print("\t" + account.account_name + ": £" + str(account.balance/100))

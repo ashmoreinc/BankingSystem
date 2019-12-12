@@ -168,7 +168,6 @@ class BankingSystem:
 
         return self.connection.change_balance(new_bal, account_id=acc_id)
 
-
 if __name__ == "__main__":
     sys = BankingSystem()
     # Test log in
