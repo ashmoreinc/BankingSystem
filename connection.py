@@ -38,13 +38,17 @@ class Connection:
 
     # Getters
 
-    def get_customers(self, cid=None, fname=None, lname=None, address=None,
-                      must_include_all: bool = False, return_as_dict: bool = False) -> tuple:
+    def get_customers(self, cid=None, fname=None, lname=None,
+                      address_l1=None, address_l2=None, address_l3=None, address_city=None, address_postcode=None,
+                      must_include_all: bool = False, exact: bool = True, return_as_dict: bool = False) -> tuple:
         """Return a list of customers from the database where all provided values are found"""
-        if cid is None and fname is None and lname is None and address is None:
+        if cid is None and fname is None and lname is None and \
+                address_l1 is None and address_l2 is None and address_l3 is None and \
+                address_city is None and address_postcode is None:
             return [], "No search data provided."
         else:
-            sql = "SELECT id, first_name, last_name, address FROM customers WHERE "
+            sql = "SELECT id, first_name, last_name, " \
+                  "address_line1, address_line2, address_line3, address_city, address_postcode FROM customers WHERE "
 
             if must_include_all:
                 op = 'AND'
@@ -52,19 +56,55 @@ class Connection:
                 op = 'OR'
 
             if cid is not None:
+                # Exact will not affect cid as it is unique
                 sql += f"id={str(cid)} {op} "
 
             if fname is not None:
-                sql += f"first_name='{str(fname)}' {op} "
+                if exact:
+                    sql += f"first_name='{str(fname)}' {op} "
+                else:
+                    sql += f"first_name LIKE '%{str(fname)}%' {op} "
 
             if lname is not None:
-                sql += f"last_name='{str(lname)}' {op} "
+                if exact:
+                    sql += f"last_name='{str(lname)}' {op} "
+                else:
+                    sql += f"last_name LIKE '%{str(lname)}%' {op} "
 
-            if address is not None:
-                sql += f"address='{str(address)}' {op} "
+            if address_l1 is not None:
+                if exact:
+                    sql += f"address_line1='{str(address_l1)}' {op} "
+                else:
+                    sql += f"address_line1 LIKE '%{str(address_l1)}%' {op} "
+
+            if address_l2 is not None:
+                if exact:
+                    sql += f"address_line2='{str(address_l2)}' {op} "
+                else:
+                    sql += f"address_line2 LIKE '%{str(address_l2)}%' {op} "
+
+            if address_l3 is not None:
+                if exact:
+                    sql += f"address_line3='{str(address_l3)}' {op} "
+                else:
+                    sql += f"address_line3 LIKE '%{str(address_l3)}%' {op} "
+
+            if address_city is not None:
+                if exact:
+                    sql += f"address_city='{str(address_city)}' {op} "
+                else:
+                    sql += f"address_city LIKE '%{str(address_city)}%' {op} "
+
+            if address_postcode is not None:
+                if exact:
+                    sql += f"address_postcode='{str(address_postcode)}' {op} "
+                else:
+                    sql += f"address_postcode LIKE '%{str(address_postcode)}%' {op} "
 
             # Remove last 4 letters to remove the added operation (op) and two spaces
             sql = sql[:-(len(op) + 2)]
+
+            print(sql)
 
             query_status, query_reply = self.__query(sql)
 
@@ -75,10 +115,11 @@ class Connection:
                 for row in self.cursor.fetchall():
 
                     if return_as_dict:
-                        d = {'id': row[0], 'first_name': row[1], 'last_name': row[2], 'address': row[3]}
+                        d = {'id': row[0], 'first_name': row[1], 'last_name': row[2],
+                             'address': [row[3], row[4], row[5], row[6], row[7]]}
                         results.append(d)
                     else:
-                        cust = Customer(row[0], row[1], row[2], row[3])
+                        cust = Customer(row[0], row[1], row[2], [row[3], row[4], row[5], row[6], row[7]])
                         results.append(cust)
 
                 return results, f"Query ran successfully. {len(results)} entries found."
@@ -140,7 +181,6 @@ class Connection:
                     for res in results:
                         custs, reply = self.get_customers(cid=res["customer_id"])
                         if len(custs) != 1:
-                            print(custs)
                             print(f'Found account id:{res["id"]}, though it is connected to {len(custs)} customers.')
                         else:
                             acc = BankAccount(res["id"], res["account_name"], res["balance"],
@@ -152,15 +192,20 @@ class Connection:
             else:
                 return [], query_reply
 
-    def get_admin(self, ad_id: int = None, first_name: str = None, last_name: str = None, address: str = None,
+    def get_admin(self, ad_id: int = None, first_name: str = None, last_name: str = None,
+                  address_l1: str = None, address_l2: str = None, address_l3: str = None,
+                  address_city: str = None, address_postcode: str = None,
                   username: str = None, full_rights: bool = None,
                   must_include_all: bool = False, return_as_dict: bool = False) -> tuple:
         """Fetch admin accounts from database"""
-        if ad_id is None and first_name is None and last_name is None and address is None \
+        if ad_id is None and first_name is None and last_name is None \
+                and address_l1 is None and address_l2 is None and address_l3 is None and \
+                address_city is None and address_postcode is None \
                 and username is None and full_rights is None:
             return [], "No search data has been provided."
         else:
-            sql = "SELECT id, first_name, last_name, address, username, password_hash, full_rights FROM admins WHERE "
+            sql = "SELECT id, first_name, last_name, address_line1, address_line2, address_line3, address_city, " \
+                  "address_postcode, username, password_hash, full_rights FROM admins WHERE "
 
             if must_include_all:
                 op = "AND"
@@ -176,8 +221,20 @@ class Connection:
             if last_name is not None:
                 sql += "last_name='" + last_name + "' " + op + " "
 
-            if address is not None:
-                sql += "address='" + address + "' " + op + " "
+            if address_l1 is not None:
+                sql += "address_line1='" + address_l1 + "' " + op + " "
+
+            if address_l2 is not None:
+                sql += "address_line2='" + address_l2 + "' " + op + " "
+
+            if address_l3 is not None:
+                sql += "address_line3='" + address_l3  + "' " + op + " "
+
+            if address_city is not None:
+                sql += "address_city='" + address_city + "' " + op + " "
+
+            if address_postcode is not None:
+                sql += "address_postcode='" + address_postcode + "' " + op + " "
 
             if username is not None:
                 sql += "username='" + username + "' " + op + " "
@@ -197,11 +254,12 @@ class Connection:
                     if return_as_dict:
                         # row index order: id, first_name, last_name, address, username, password_hash, full_rights
                         d = {"admin_id": row[0], "first_name": row[1], "last_name": row[2],
-                             "address": row[3], "username": row[4], "password_hash": row[5],
-                             "full_rights": bool(row[6])}
+                             "address": [row[3], row[4], row[5], row[6], row[7]],
+                             "username": row[8], "password_hash": row[9], "full_rights": bool(row[10])}
                         results.append(d)
                     else:
-                        admin = Admin(row[0], row[1], row[2], row[3], row[4], row[5], row[6])
+                        admin = Admin(row[0], row[1], row[2], [row[3], row[4], row[5], row[6], row[7]],
+                                      row[8], row[9], row[10])
                         results.append(admin)
                 return results, f"Query ran successfully. {len(results)} entries found."
             else:
@@ -292,10 +350,11 @@ class Connection:
             return False, query_reply
 
     # Create new table entries
-    def create_customer(self, fname: str, lname: str, addr: str) -> tuple:
+    def create_customer(self, fname: str, lname: str, addr: list) -> tuple:
         """Create a new table entry for the customer"""
-        sql = f"INSERT INTO customers (first_name, last_name, address)" \
-              f"VALUES ('{fname}', '{lname}', '{addr}')"
+        sql = f"INSERT INTO customers " \
+              f"(first_name, last_name, address_line1, address_line2, address_line3, address_city, address_postcode)" \
+              f"VALUES ('{fname}', '{lname}', '{addr[0]}', '{addr[1]}', '{addr[2]}', '{addr[3]}', '{addr[4]}')"
 
         res = self.__query(sql)
         self.conn.commit()
@@ -311,11 +370,14 @@ class Connection:
         self.conn.commit()
         return res
 
-    def create_admin_account(self, fname: str, lname: str, addr: str,
+    def create_admin_account(self, fname: str, lname: str, addr: list,
                              username: str, pass_hash: str, full_rights: int) -> tuple:
         """add an admin account"""
-        sql = f"INSERT INTO admins (first_name, last_name, address, username, password_hash, full_rights)" \
-              f"VALUES ('{fname}', '{lname}', '{addr}', '{username}', '{pass_hash}', '{full_rights}')"
+        sql = f"INSERT INTO admins " \
+              f"(first_name, last_name, address_line1, address_line2, address_line3, address_city, address_city, " \
+              f"username, password_hash, full_rights)" \
+              f"VALUES ('{fname}', '{lname}', '{addr[0]}', '{addr[1]}', '{addr[2]}', '{addr[3]}', '{addr[4]}', " \
+              f"'{username}', '{pass_hash}', '{full_rights}')"
 
         res = self.__query(sql)
         self.conn.commit()

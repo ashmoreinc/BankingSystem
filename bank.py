@@ -10,7 +10,7 @@ def require_login(function):
     def wrapper(self, *args, **kwargs):
         if self.logged_in:
             return function(self, *args, **kwargs)
-
+        return "Admin log-on required."
     return wrapper
 
 
@@ -20,7 +20,10 @@ def require_full_rights(function):
         if self.logged_in:
             if self.admin.has_full_rights():
                 return function(self, *args, **kwargs)
-
+            else:
+                return "Admin must have full access rights."
+        else:
+            return "Admin log-on required."
     return wrapper
 
 
@@ -93,28 +96,27 @@ class BankingSystem:
 
         return self.connection.create_admin_account(fname, lname, addr, username, hash_res, rights)
 
-    def login(self, username, password) -> bool:
+    def login(self, username, password) -> tuple:
         """verify login details and then set the admin"""
 
         if not self.connection.connected:
-            print("Connection issue.")
-            return False
+            return False, "Connection to database could not be established."
 
         # Fetch the admin class
-        admin = self.connection.get_admin(username=username)  # Returns the admin class
-        if len(admin) != 1:
-            print(f"Users found: {len(admin)}")
-            return False
+        admin, reply = self.connection.get_admin(username=username)  # Returns the admin class
+        if len(admin) > 1:
+            return False, "Bad information received from the database."
+        elif len(admin) < 1:
+            return False, "Login credentials are invalid."
         else:
             admin = admin[0]  # Turn list into single element
 
         if self.verify_hash(admin.get_password(), password):
             self.admin = admin
             self.logged_in = True
-            return True
+            return True, ""
         else:
-            print("Could not verify hash.")
-            return False
+            return False, "Login credentials are invalid."
 
     def log_out(self):
         """Changes log in status and connected admin"""
@@ -140,7 +142,7 @@ class BankingSystem:
         return self.connection.create_account(account_name, account_num, interest_rate, overdraft_limit, customer_id)
 
     @require_login
-    def creat_new_customer(self, fname: str, lname: str, addr: str):
+    def creat_new_customer(self, fname: str, lname: str, addr: list):
         """Create a new customer"""
         return self.connection.create_customer(fname, lname, addr)
 
@@ -167,6 +169,48 @@ class BankingSystem:
         new_bal = balance + amount
 
         return self.connection.change_balance(new_bal, account_id=acc_id)
+
+    @require_login
+    def get_customer_data(self, customer_id: int) -> dict:
+        """Gets all customer data including connected accounts"""
+        # As the customer id field is unique, there should only be one item available in the list stored as data
+        data, reply = self.connection.get_customers(cid=customer_id)
+
+        # data is a list of customer classes, check there is any customers
+        # if their isn't, return None in place of the data
+        if len(data) < 1:
+            return {'customer': None, 'accounts': None}
+
+        customer = data[0]
+
+        # Get all the connected accounts
+        accounts, reply = self.connection.get_accounts(cust_id=customer_id)
+
+        return_data = {'customer': customer, 'accounts': accounts}
+        return return_data
+
+    @require_login
+    def get_account_data(self, account_id: int) -> BankAccount:
+        """Gets the account information and returns the BankAccount object.
+        Don't return customer as the customer is store in the class"""
+        # As the account has a unique id, only one element should be returned when selecting via id
+        data, reply = self.connection.get_accounts(accid=account_id)
+
+        # Data is a list of Account classes, check if there is only 1
+        if len(data) != 1:
+            return None
+
+        account = data[0]
+
+        return account
+
+    @require_login
+    def search_customers(self, cid=None, fname=None, lname=None, addr=None, must_include_all=False, exact=True):
+        """Issue a search the for customers"""
+        return self.connection.get_customers(cid=cid, fname=fname, lname=lname,
+                                             address_l1=addr[0], address_l2=addr[1], address_l3=addr[2],
+                                             address_city=addr[3], address_postcode=addr[4],
+                                             must_include_all=must_include_all, exact=exact)
 
 if __name__ == "__main__":
     sys = BankingSystem()
