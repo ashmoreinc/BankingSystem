@@ -104,8 +104,6 @@ class Connection:
             # Remove last 4 letters to remove the added operation (op) and two spaces
             sql = sql[:-(len(op) + 2)]
 
-            print(sql)
-
             query_status, query_reply = self.__query(sql)
 
             if query_status:
@@ -356,9 +354,10 @@ class Connection:
               f"(first_name, last_name, address_line1, address_line2, address_line3, address_city, address_postcode)" \
               f"VALUES ('{fname}', '{lname}', '{addr[0]}', '{addr[1]}', '{addr[2]}', '{addr[3]}', '{addr[4]}')"
 
-        res = self.__query(sql)
+        stat, repl = self.__query(sql)
         self.conn.commit()
-        return res
+        cid = self.cursor.lastrowid
+        return stat, repl, cid
 
     def create_account(self, account_name: str, account_number: int, interest_rate: float, overdraft_limit: int,
                        customer_id: int) -> tuple:
@@ -366,9 +365,10 @@ class Connection:
         sql = f"INSERT INTO accounts (account_name, account_number, balance, interest_rate, overdraft_limit, customer_id) " \
               f"VALUES ('{account_name}', {account_number}, 0, {interest_rate}, {overdraft_limit}, {customer_id})"
 
-        res = self.__query(sql)
+        stat, repl = self.__query(sql)
         self.conn.commit()
-        return res
+        accid = self.cursor.lastrowid
+        return stat, repl, accid
 
     def create_admin_account(self, fname: str, lname: str, addr: list,
                              username: str, pass_hash: str, full_rights: int) -> tuple:
@@ -378,10 +378,10 @@ class Connection:
               f"username, password_hash, full_rights)" \
               f"VALUES ('{fname}', '{lname}', '{addr[0]}', '{addr[1]}', '{addr[2]}', '{addr[3]}', '{addr[4]}', " \
               f"'{username}', '{pass_hash}', '{full_rights}')"
-
-        res = self.__query(sql)
+        stat, repl = self.__query(sql)
         self.conn.commit()
-        return res
+        adid = self.cursor.lastrowid
+        return stat, repl, adid
 
 
 if __name__ == "__main__":

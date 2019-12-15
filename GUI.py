@@ -18,7 +18,6 @@ class Window(tk.Tk):
         # Full Screen Option padx=5
         # self.attributes("-fullscreen", True)
 
-
         # Container for each page
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
@@ -26,7 +25,7 @@ class Window(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
 
         self.Pages = {}
-        for page in (HomePage, LandingPage, CustomerView, CustomerSearch, AccountView):  # Populate with pages
+        for page in (HomePage, LandingPage, CustomerView, CustomerSearch, CustomerCreate, AccountView):  # Populate with pages
             p = page(container, self)
 
             self.Pages[page.__name__] = p
@@ -178,11 +177,14 @@ class LandingPage(PageBase):
 
         tk.Label(cust_manage, text="Customer Management", font=FONTS["l"]).grid(row=0, column=0, columnspan=2)
 
-        # tk.Button(cust_manage, text="View Customer (1)", command=lambda: controller.show_page(CustomerView.__name__)).grid(row=1, column=1)
-
+        # Buttons
         tk.Button(cust_manage, text="Search", font=FONTS["m"],
-                  command=lambda: controller.show_page(CustomerSearch.__name__)).grid(row=1, column=0)
+                  command=lambda: controller.show_page(CustomerSearch.__name__)).grid(row=1, column=0, sticky="w")
 
+        tk.Button(cust_manage, text="Create", font=FONTS["m"],
+                  command=lambda: controller.show_page(CustomerCreate.__name__)).grid(row=1, column=1, sticky="w")
+
+        # Separate customer and account section
         ttk.Separator(customer_frame).pack(side="top", fill="x")
 
         # Account Control
@@ -220,7 +222,7 @@ class CustomerSearch(PageBase):
         self.results_frame = results.widget_frame
 
         # Create the search input fields
-        row = 0 #  Use a row variable so we can quickly add widgets in and swap them easily without hardcoded rows
+        row = 0  #  Use a row variable so we can quickly add widgets in and swap them easily without hardcoded rows
 
         # id
         tk.Label(query_frame, text="Customer ID: ", font=FONTS["m"]).grid(row=row, column=0, padx=10, sticky="e")
@@ -367,18 +369,14 @@ class CustomerSearch(PageBase):
         else:
             include_all = False
 
-        print(exact_field)
-
         if exact_field == 1:
             exact_field = True
         else:
             exact_field = False
 
-        print(exact_field)
-
         results, reply = SYSTEM.search_customers(cid=cid, fname=fname, lname=lname, addr=addr,
                                           must_include_all=include_all, exact=exact_field)
-        print(results)
+
         # Wipe any previous results or data
         for child in self.results_frame.winfo_children():
             child.destroy()
@@ -406,6 +404,131 @@ class CustomerSearch(PageBase):
         """Opens the customer page and sets it up to view the customer with given id"""
         self.controller.Pages[CustomerView.__name__].load_customer_info(customer_id)
         self.controller.show_page(CustomerView.__name__)
+
+
+class CustomerCreate(PageBase):
+    """Page for creating a new customer"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        # Title
+        tk.Label(self, text="New Customer", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+
+        # Required fields notice
+        tk.Label(self, text="All fields with * are required.",
+                 font=FONTS["s"], fg="#dd0000").pack(side="top")
+
+        # Required fields notice
+        self.fail_text = tk.Label(self, text="",
+                 font=FONTS["s"], fg="#dd0000")
+        self.fail_text.pack(side="top")
+
+        # Input parent frame
+        input_frame = tk.Frame(self)
+        input_frame.pack(side="top", fill="y", pady=30)
+
+        # Name
+        tk.Label(input_frame, text="Name: ", font=FONTS["m"]).grid(row=1, column=0, sticky="e")
+        tk.Label(input_frame, text="First *", font=FONTS["m"]).grid(row=0, column=1, sticky="w")
+        tk.Label(input_frame, text="Last *", font=FONTS["m"]).grid(row=0, column=2, sticky="w")
+
+        self.first_name = tk.Entry(input_frame, font=FONTS["m"])
+        self.first_name.grid(row=1, column=1, sticky="nsew", padx=5)
+        self.last_name = tk.Entry(input_frame, font=FONTS["m"])
+        self.last_name.grid(row=1, column=2, sticky="nsew", padx=5)
+
+        ttk.Separator(input_frame).grid(row=2, column=0, columnspan=3, sticky="ew", padx=10, pady=10)
+
+        # Address
+        tk.Label(input_frame, text="Address", font=FONTS["m"]).grid(row=3, column=0, columnspan=3, sticky="nsew", pady=5)
+
+        # Line 1
+        tk.Label(input_frame, text="Line 1 *", font=FONTS["m"]).grid(row=4, column=0, sticky="w")
+
+        self.addr_l1 = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_l1.grid(row=4, column=1, columnspan=2, sticky="nsew", pady=2, padx=10)
+
+        # Line 2
+        tk.Label(input_frame, text="Line 2", font=FONTS["m"]).grid(row=5, column=0, sticky="w")
+
+        self.addr_l2 = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_l2.grid(row=5, column=1, columnspan=2, sticky="nsew", pady=2, padx=10)
+
+        # Line 3
+        tk.Label(input_frame, text="Line 3", font=FONTS["m"]).grid(row=6, column=0, sticky="w")
+
+        self.addr_l3 = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_l3.grid(row=6, column=1, columnspan=2, sticky="nsew", pady=2, padx=10)
+
+        # Line city
+        tk.Label(input_frame, text="City *", font=FONTS["m"]).grid(row=7, column=1, sticky="ew")
+
+        self.addr_city = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_city.grid(row=8, column=1, sticky="nsew", padx=5)
+
+        # Line Post code
+        tk.Label(input_frame, text="Postcode *", font=FONTS["m"]).grid(row=7, column=2, sticky="ew")
+
+        self.addr_post = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_post.grid(row=8, column=2, sticky="nsew", padx=5)
+
+        # Submit button
+        tk.Button(input_frame, text="Submit", font=FONTS["m"], bg="#00dd00",
+                  command=self.submit).grid(row=9, column=1, columnspan=2, sticky="nsew", pady=30, padx=5)
+
+    def submit(self):
+        """Run when the form is submitted"""
+        fname = self.first_name.get()
+        lname = self.last_name.get()
+
+        addr = [self.addr_l1.get(),
+                self.addr_l2.get(),
+                self.addr_l3.get(),
+                self.addr_city.get(),
+                self.addr_post.get()]
+
+        run_query = True
+
+        # Check the required fields
+        if len(fname) == 0:
+            self.first_name.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+            run_query = False
+
+        if len(lname) == 0:
+            self.last_name.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+            run_query = False
+
+        if len(addr[0]) == 0:
+            self.addr_l1.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+            run_query = False
+
+        if len(addr[3]) == 0:
+            self.addr_city.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+            run_query = False
+
+        if len(addr[4]) == 0:
+            self.addr_post.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+            run_query = False
+
+        # Run the query if all required_data is set
+        if run_query:
+            status, reply, cid = SYSTEM.create_new_customer(fname, lname, addr)
+            if status:
+                self.controller.Pages[CustomerView.__name__].load_customer_info(cid)
+                self.controller.show_page(CustomerView.__name__)
+            else:
+                self.fail_text.configure(text=reply)
+
+    def page_update(self):
+        """Runs when the page is displayed"""
+        self.first_name.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+        self.last_name.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+        self.addr_l1.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+        self.addr_city.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+        self.addr_post.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+        self.fail_text.configure(text="")
 
 
 class CustomerView(PageBase):

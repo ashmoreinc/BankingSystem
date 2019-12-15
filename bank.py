@@ -142,7 +142,7 @@ class BankingSystem:
         return self.connection.create_account(account_name, account_num, interest_rate, overdraft_limit, customer_id)
 
     @require_login
-    def creat_new_customer(self, fname: str, lname: str, addr: list):
+    def create_new_customer(self, fname: str, lname: str, addr: list):
         """Create a new customer"""
         return self.connection.create_customer(fname, lname, addr)
 
