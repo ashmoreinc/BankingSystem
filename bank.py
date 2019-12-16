@@ -146,6 +146,10 @@ class BankingSystem:
         """Create a new customer"""
         return self.connection.create_customer(fname, lname, addr)
 
+    def update_customer(self, cid, **kwargs):
+        """Updates the customers data with the givren info"""
+        return self.connection.update_customer(cid, **kwargs)
+
     @require_login
     def withdraw(self, acc_id: int, amount: int):
         """Withdraw money from an account"""

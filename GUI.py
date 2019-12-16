@@ -25,7 +25,8 @@ class Window(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
 
         self.Pages = {}
-        for page in (HomePage, LandingPage, CustomerView, CustomerSearch, CustomerCreate, AccountView):  # Populate with pages
+        for page in PageBase.__subclasses__():  # Populate with pages
+            # Fetch all the subclasses of PageBase as all pages will inherit from this
             p = page(container, self)
 
             self.Pages[page.__name__] = p
@@ -52,7 +53,8 @@ def create_navigation_bar(parent, window_controller, show_home_button=True):
                   command=lambda: window_controller.show_page(LandingPage.__name__)).pack(side="left", fill="y")
 
     # account button
-    tk.Button(header_frame, text="Your Account", font=FONTS["m"]).pack(side="right", fill="y")
+    tk.Button(header_frame, text="Your Account", font=FONTS["m"],
+              command=lambda: window_controller.show_page(AdminView.__name__)).pack(side="right", fill="y")
 
     # header separator
     ttk.Separator(parent).pack(side="top", fill="x")
@@ -87,11 +89,11 @@ class PageBase(tk.Frame):
         self.controller = controller
 
     def initialise(self):
-        """To be overriden with tasks that must be completed on class initialisation by the controller class Window"""
+        """To be overridden with tasks that must be completed on class initialisation by the controller class Window"""
         pass
 
     def page_update(self):
-        """To be overriden with tasks that must be completed when this page is switched too"""
+        """To be overridden with tasks that must be completed when this page is switched too"""
     pass
 
 
@@ -142,6 +144,12 @@ class HomePage(PageBase):
         else:
             self.fail_text.configure(text=msg)
 
+    def page_update(self):
+        """Runs when the page is shown"""
+        # Clear all input fields so they aren't stored for when the system has been logged out of
+        self.username_entry.delete(0, tk.END)
+        self.password_entry.delete(0, tk.END)
+
 
 class LandingPage(PageBase):
     """The page the user lands at when the log in"""
@@ -177,7 +185,7 @@ class LandingPage(PageBase):
 
         tk.Label(cust_manage, text="Customer Management", font=FONTS["l"]).grid(row=0, column=0, columnspan=2)
 
-        # Buttons
+        # Customer Buttons
         tk.Button(cust_manage, text="Search", font=FONTS["m"],
                   command=lambda: controller.show_page(CustomerSearch.__name__)).grid(row=1, column=0, sticky="w")
 
@@ -405,6 +413,22 @@ class CustomerSearch(PageBase):
         self.controller.Pages[CustomerView.__name__].load_customer_info(customer_id)
         self.controller.show_page(CustomerView.__name__)
 
+    def page_update(self):
+        """Runs when this page is displayed"""
+        # Wipe any previous searches
+        for child in self.results_frame.winfo_children():
+            child.destroy()
+
+        # Empty all the input fields
+        self.cust_id.delete(0, tk.END)
+        self.first_name.delete(0, tk.END)
+        self.last_name.delete(0, tk.END)
+        self.addr1.delete(0, tk.END)
+        self.addr2.delete(0, tk.END)
+        self.addr3.delete(0, tk.END)
+        self.addr_city.delete(0, tk.END)
+        self.addr_post.delete(0, tk.END)
+
 
 class CustomerCreate(PageBase):
     """Page for creating a new customer"""
@@ -420,7 +444,7 @@ class CustomerCreate(PageBase):
         tk.Label(self, text="All fields with * are required.",
                  font=FONTS["s"], fg="#dd0000").pack(side="top")
 
-        # Required fields notice
+        # Text shown on failiure
         self.fail_text = tk.Label(self, text="",
                  font=FONTS["s"], fg="#dd0000")
         self.fail_text.pack(side="top")
@@ -531,21 +555,218 @@ class CustomerCreate(PageBase):
         self.fail_text.configure(text="")
 
 
+class CustomerUpdate(PageBase):
+    """Update form for customer information"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        # This will be used to hold data about the customer being edited
+        self.current_customer = None
+
+        # Page widgets
+        create_navigation_bar(self, controller)
+
+        # title
+        tk.Label(self, text="Customer edit", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+
+        # Required fields notice
+        tk.Label(self, text="All fields with * are to be filled.",
+                 font=FONTS["s"], fg="#dd0000").pack(side="top")
+
+        self.fail_text = tk.Label(self, text="", font=FONTS["m"], fg="#dd0000")
+        self.fail_text.pack(side="top", fill="x")
+
+        # Input parent frame
+        input_frame = tk.Frame(self)
+        input_frame.pack(side="top", fill="y", pady=30)
+
+        # Id (not editable)
+        tk.Label(input_frame, text="Customer ID: ", font=FONTS["m"]).grid(row=0, column=0, sticky="e")
+
+        self.customer_id = tk.Label(input_frame, text="", font=FONTS["m"])
+        self.customer_id.grid(row=0, column=1, sticky="w")
+
+        # Name
+        tk.Label(input_frame, text="Name: ", font=FONTS["m"]).grid(row=2, column=0, sticky="e")
+        tk.Label(input_frame, text="First *", font=FONTS["m"]).grid(row=1, column=1, sticky="w")
+        tk.Label(input_frame, text="Last *", font=FONTS["m"]).grid(row=1, column=2, sticky="w")
+
+        self.first_name = tk.Entry(input_frame, font=FONTS["m"])
+        self.first_name.grid(row=2, column=1, sticky="nsew", padx=5)
+        self.last_name = tk.Entry(input_frame, font=FONTS["m"])
+        self.last_name.grid(row=2, column=2, sticky="nsew", padx=5)
+
+        ttk.Separator(input_frame).grid(row=3, column=0, columnspan=3, sticky="ew", padx=10, pady=10)
+
+        # Address
+        tk.Label(input_frame, text="Address", font=FONTS["m"]).grid(row=4, column=0, columnspan=3, sticky="nsew",
+                                                                    pady=5)
+
+        # Line 1
+        tk.Label(input_frame, text="Line 1 *", font=FONTS["m"]).grid(row=5, column=0, sticky="w")
+
+        self.addr_l1 = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_l1.grid(row=5, column=1, columnspan=2, sticky="nsew", pady=2, padx=10)
+
+        # Line 2
+        tk.Label(input_frame, text="Line 2", font=FONTS["m"]).grid(row=6, column=0, sticky="w")
+
+        self.addr_l2 = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_l2.grid(row=6, column=1, columnspan=2, sticky="nsew", pady=2, padx=10)
+
+        # Line 3
+        tk.Label(input_frame, text="Line 3", font=FONTS["m"]).grid(row=7, column=0, sticky="w")
+
+        self.addr_l3 = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_l3.grid(row=7, column=1, columnspan=2, sticky="nsew", pady=2, padx=10)
+
+        # Line city
+        tk.Label(input_frame, text="City *", font=FONTS["m"]).grid(row=8, column=1, sticky="ew")
+
+        self.addr_city = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_city.grid(row=9, column=1, sticky="nsew", padx=5)
+
+        # Line Post code
+        tk.Label(input_frame, text="Postcode *", font=FONTS["m"]).grid(row=8, column=2, sticky="ew")
+
+        self.addr_post = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_post.grid(row=9, column=2, sticky="nsew", padx=5)
+
+        # Submit button
+        tk.Button(input_frame, text="Update", font=FONTS["m"], bg="#00dd00",
+                  command=self.update_info).grid(row=10, column=1, columnspan=2, sticky="nsew", pady=30, padx=5)
+
+    def update_info(self):
+        """Gets the inputs, verifies the data, then sends the update to the system"""
+        fname = self.first_name.get()
+        lname = self.last_name.get()
+
+        addr = [self.addr_l1.get(),
+                self.addr_l2.get(),
+                self.addr_l3.get(),
+                self.addr_city.get(),
+                self.addr_post.get()]
+
+        run_query = True
+        kwargs = {}
+
+        if len(fname) == 0:
+            run_query = False
+            self.first_name.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+        else:
+            self.first_name.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+            kwargs['fname'] = fname
+
+        if len(lname) == 0:
+            run_query = False
+            self.last_name.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+        else:
+            self.last_name.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+            kwargs['lname'] = lname
+
+        if len(addr[0]) == 0:
+            run_query = False
+            self.addr_l1.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+        else:
+            self.addr_l1.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+
+        if len(addr[3]) == 0:
+            run_query = False
+            self.addr_city.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+        else:
+            self.addr_city.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+
+        if len(addr[4]) == 0:
+            run_query = False
+            self.addr_post.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+        else:
+            self.addr_post.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+
+        kwargs['addr'] = addr
+
+        if run_query:
+            status, reply, customers = SYSTEM.update_customer(self.current_customer.customer_id, **kwargs)
+            customer = customers[0]
+
+            if status:
+                # Set the current customer
+                self.current_customer = customer
+
+                # Take the customer back to the customer view page with the updated customer details
+                self.controller.Pages[CustomerView.__name__].load_customer_info(self.current_customer.customer_id)
+                self.controller.show_page(CustomerView.__name__)
+            else:
+                self.fail_text.configure(text=reply)
+        else:
+            self.fail_text.configure(text="All fields marked * must be set.")
+
+    def load_data_into_entry(self):
+        """Loads all the data from the customer into the entry boxes"""
+        # Clear the data
+        self.first_name.delete(0, tk.END)
+        self.last_name.delete(0, tk.END)
+
+        self.addr_l1.delete(0, tk.END)
+        self.addr_l2.delete(0, tk.END)
+        self.addr_l3.delete(0, tk.END)
+        self.addr_city.delete(0, tk.END)
+        self.addr_post.delete(0, tk.END)
+
+        if self.current_customer is not None:
+            self.customer_id.configure(text=str(self.current_customer.customer_id), fg="#000000")
+
+            self.first_name.insert(0, self.current_customer.first_name)
+            self.last_name.insert(0, self.current_customer.last_name)
+
+            self.addr_l1.insert(0, self.current_customer.address[0])
+            if self.current_customer.address[1] is None:
+                self.current_customer.address[1] = ""
+            self.addr_l2.insert(0, self.current_customer.address[1])
+            if self.current_customer.address[2] is None:
+                self.current_customer.address[2] = ""
+            self.addr_l3.insert(0, self.current_customer.address[2])
+            self.addr_city.insert(0, self.current_customer.address[3])
+            self.addr_post.insert(0, self.current_customer.address[4])
+        else:
+            self.customer_id.configure(text="Customer is not set", fg="#dd0000")
+
+    def set_customer(self, customer):
+        """Sets the customer to work with"""
+        self.current_customer = customer
+
+    def page_update(self):
+        """Runs when the page is shown"""
+        self.load_data_into_entry()
+
+        self.first_name.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+        self.last_name.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+        self.addr_post.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+        self.addr_city.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+        self.addr_l1.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=0)
+
+
 class CustomerView(PageBase):
     """View a customer and all their data"""
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
+        self.current_customer = None
+
         create_navigation_bar(self, controller)
 
         # Title
-        tk.Label(self, text="Customer Information", font=FONTS["l"]).pack(side="top", fill="x", pady=15)
+        header = tk.Frame(self)
+        header.pack(side="top", pady=15)
+
+        tk.Label(header, text="Customer Information", font=FONTS["l"]).grid(row=0, column=0, sticky="nsew")
+
+        # Update button
+        tk.Button(header, text="Update Customer", font=FONTS["m"],
+                  command=self.update_customer).grid(row=0, column=1, sticky="nsew")
 
         # Warning text
         self.fail_text = tk.Label(self, text="", font=FONTS["m"], fg="#dd0000")
         self.fail_text.pack(side="top", fill="y", pady=15)
-
-        # TODO: Make a button to navigate to information update page
 
         data_frame = tk.Frame(self)
         data_frame.pack(side="top", fill="y")
@@ -588,6 +809,8 @@ class CustomerView(PageBase):
         cust_data = SYSTEM.get_customer_data(customer_id)
         customer = cust_data['customer']
         accounts = cust_data['accounts']
+
+        self.current_customer = customer
 
         if customer is None:
             self.fail_text.configure(text=f"Customer with id {str(customer_id)} could not be found")
@@ -635,6 +858,14 @@ class CustomerView(PageBase):
                       command=lambda accid=account.account_id: self.view_account(accid)).grid(row=row, column=3, padx=5)
 
             row += 1
+
+    def update_customer(self):
+        """Go to the customer update page for this customer"""
+        if self.current_customer is None:
+            pass
+        else:
+            self.controller.Pages[CustomerUpdate.__name__].set_customer(self.current_customer)
+            self.controller.show_page(CustomerUpdate.__name__)
 
     def view_account(self, account_id: int):
         """Set the account view up for the account with the given id and then show the account"""
@@ -718,6 +949,27 @@ class AccountView(PageBase):
         self.controller.Pages[CustomerView.__name__].load_customer_info(customer_id)
         self.controller.show_page(CustomerView.__name__)
 
+
+class AdminView(PageBase):
+    """View details about the current admin account"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        # title
+        tk.Label(self, text="Your account", font=FONTS["l"]).pack(side="top", fill="x", pady=20)
+
+        # TODO: Account details and update
+
+        # Log out button
+        tk.Button(self, text="Log out", font=FONTS["m"], bg="#dd0000", width=10,
+                  command=self.logout).pack(side="bottom", pady=20)
+
+    def logout(self):
+        """Logs the user out and returns to the home page"""
+        SYSTEM.log_out()
+        self.controller.show_page(HomePage.__name__)
 
 if __name__ == "__main__":
     win = Window()

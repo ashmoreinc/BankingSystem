@@ -347,6 +347,51 @@ class Connection:
         else:
             return False, query_reply
 
+    def update_customer(self, cid, fname: str = None, lname: str = None, addr: list = None):
+        """Update the customer entry"""
+        if fname is None and lname is None and addr == [None, None, None, None, None]:
+            return False, "No data is set to be updated", None
+        else:
+            sql = "UPDATE customers " \
+                  "SET "
+
+            if fname is not None:
+                sql += f"first_name='{str(fname)}', "
+
+            if lname is not None:
+                sql += f"last_name='{str(lname)}', "
+
+            if addr[0] is not None:
+                sql += f"address_line1='{str(addr[0])}', "
+
+            if addr[1] is not None:
+                sql += f"address_line2='{str(addr[1])}', "
+
+            if addr[2] is not None:
+                sql += f"address_line3='{str(addr[2])}', "
+
+            if addr[3] is not None:
+                sql += f"address_city='{str(addr[3])}', "
+
+            if addr[4] is not None:
+                sql += f"address_postcode='{str(addr[4])}', "
+
+            # Remove the comma and space that are at the end.
+            sql = sql[:-2]
+
+            sql += f" WHERE id={cid}"
+
+            print(sql)
+
+            stat, repl = self.__query(sql)
+            if stat:
+                self.conn.commit()
+                # Get the new customer object
+                customer, reply = self.get_customers(cid=cid)
+                return True, "Updated.", customer
+            else:
+                return False, repl, None
+
     # Create new table entries
     def create_customer(self, fname: str, lname: str, addr: list) -> tuple:
         """Create a new table entry for the customer"""
