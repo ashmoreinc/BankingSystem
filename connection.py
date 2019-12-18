@@ -40,69 +40,75 @@ class Connection:
 
     def get_customers(self, cid=None, fname=None, lname=None,
                       address_l1=None, address_l2=None, address_l3=None, address_city=None, address_postcode=None,
-                      must_include_all: bool = False, exact: bool = True, return_as_dict: bool = False) -> tuple:
+                      must_include_all: bool = False, exact: bool = True,
+                      return_as_dict: bool = False, get_all: bool = False) -> tuple:
         """Return a list of customers from the database where all provided values are found"""
-        if cid is None and fname is None and lname is None and \
-                address_l1 is None and address_l2 is None and address_l3 is None and \
-                address_city is None and address_postcode is None:
+        if (cid is None and fname is None and lname is None and
+                address_l1 is None and address_l2 is None and address_l3 is None and
+                address_city is None and address_postcode is None) and not get_all:
             return [], "No search data provided."
         else:
-            sql = "SELECT id, first_name, last_name, " \
-                  "address_line1, address_line2, address_line3, address_city, address_postcode FROM customers WHERE "
-
-            if must_include_all:
-                op = 'AND'
+            if get_all:
+                sql = "SELECT id, first_name, last_name, " \
+                      "address_line1, address_line2, address_line3, address_city, address_postcode " \
+                      "FROM customers"
             else:
-                op = 'OR'
+                sql = "SELECT id, first_name, last_name, " \
+                      "address_line1, address_line2, address_line3, address_city, address_postcode FROM customers WHERE "
 
-            if cid is not None:
-                # Exact will not affect cid as it is unique
-                sql += f"id={str(cid)} {op} "
-
-            if fname is not None:
-                if exact:
-                    sql += f"first_name='{str(fname)}' {op} "
+                if must_include_all:
+                    op = 'AND'
                 else:
-                    sql += f"first_name LIKE '%{str(fname)}%' {op} "
+                    op = 'OR'
 
-            if lname is not None:
-                if exact:
-                    sql += f"last_name='{str(lname)}' {op} "
-                else:
-                    sql += f"last_name LIKE '%{str(lname)}%' {op} "
+                if cid is not None:
+                    # Exact will not affect cid as it is unique
+                    sql += f"id={str(cid)} {op} "
 
-            if address_l1 is not None:
-                if exact:
-                    sql += f"address_line1='{str(address_l1)}' {op} "
-                else:
-                    sql += f"address_line1 LIKE '%{str(address_l1)}%' {op} "
+                if fname is not None:
+                    if exact:
+                        sql += f"first_name='{str(fname)}' {op} "
+                    else:
+                        sql += f"first_name LIKE '%{str(fname)}%' {op} "
 
-            if address_l2 is not None:
-                if exact:
-                    sql += f"address_line2='{str(address_l2)}' {op} "
-                else:
-                    sql += f"address_line2 LIKE '%{str(address_l2)}%' {op} "
+                if lname is not None:
+                    if exact:
+                        sql += f"last_name='{str(lname)}' {op} "
+                    else:
+                        sql += f"last_name LIKE '%{str(lname)}%' {op} "
 
-            if address_l3 is not None:
-                if exact:
-                    sql += f"address_line3='{str(address_l3)}' {op} "
-                else:
-                    sql += f"address_line3 LIKE '%{str(address_l3)}%' {op} "
+                if address_l1 is not None:
+                    if exact:
+                        sql += f"address_line1='{str(address_l1)}' {op} "
+                    else:
+                        sql += f"address_line1 LIKE '%{str(address_l1)}%' {op} "
 
-            if address_city is not None:
-                if exact:
-                    sql += f"address_city='{str(address_city)}' {op} "
-                else:
-                    sql += f"address_city LIKE '%{str(address_city)}%' {op} "
+                if address_l2 is not None:
+                    if exact:
+                        sql += f"address_line2='{str(address_l2)}' {op} "
+                    else:
+                        sql += f"address_line2 LIKE '%{str(address_l2)}%' {op} "
 
-            if address_postcode is not None:
-                if exact:
-                    sql += f"address_postcode='{str(address_postcode)}' {op} "
-                else:
-                    sql += f"address_postcode LIKE '%{str(address_postcode)}%' {op} "
+                if address_l3 is not None:
+                    if exact:
+                        sql += f"address_line3='{str(address_l3)}' {op} "
+                    else:
+                        sql += f"address_line3 LIKE '%{str(address_l3)}%' {op} "
 
-            # Remove last 4 letters to remove the added operation (op) and two spaces
-            sql = sql[:-(len(op) + 2)]
+                if address_city is not None:
+                    if exact:
+                        sql += f"address_city='{str(address_city)}' {op} "
+                    else:
+                        sql += f"address_city LIKE '%{str(address_city)}%' {op} "
+
+                if address_postcode is not None:
+                    if exact:
+                        sql += f"address_postcode='{str(address_postcode)}' {op} "
+                    else:
+                        sql += f"address_postcode LIKE '%{str(address_postcode)}%' {op} "
+
+                # Remove last 4 letters to remove the added operation (op) and two spaces
+                sql = sql[:-(len(op) + 2)]
 
             query_status, query_reply = self.__query(sql)
 
@@ -427,6 +433,30 @@ class Connection:
         self.conn.commit()
         adid = self.cursor.lastrowid
         return stat, repl, adid
+
+    # Delete table rows
+    def delete_customer(self, cid):
+        """Remove the customer row"""
+
+        # We do not need to delete all the connected accounts as they are set to cascade
+        sql = f"DELETE FROM customers WHERE id={int(cid)}"
+
+        stat, repl = self.__query(sql)
+        if stat:
+            self.conn.commit()
+        return stat, repl
+
+    def delete_account(self, accid):
+        """Remove the account row"""
+
+        sql = f"DELETE FROM accounts WHERE id={int(accid)}"
+
+        stat, repl = self.__query(sql)
+
+        if stat:
+            self.conn.commit()
+
+        return stat, repl
 
 
 if __name__ == "__main__":

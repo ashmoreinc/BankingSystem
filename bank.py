@@ -146,9 +146,15 @@ class BankingSystem:
         """Create a new customer"""
         return self.connection.create_customer(fname, lname, addr)
 
+    @require_login
     def update_customer(self, cid, **kwargs):
         """Updates the customers data with the givren info"""
         return self.connection.update_customer(cid, **kwargs)
+
+    @require_login
+    def delete_customer(self, cid):
+        """remove the customer entry from the database via the connection handler"""
+        return self.connection.delete_customer(cid)
 
     @require_login
     def withdraw(self, acc_id: int, amount: int):
@@ -209,12 +215,15 @@ class BankingSystem:
         return account
 
     @require_login
-    def search_customers(self, cid=None, fname=None, lname=None, addr=None, must_include_all=False, exact=True):
+    def search_customers(self, cid=None, fname=None, lname=None, addr=None,
+                         must_include_all=False, exact=True, get_all=False):
         """Issue a search the for customers"""
+        if get_all:
+            return self.connection.get_customers(get_all=True)
         return self.connection.get_customers(cid=cid, fname=fname, lname=lname,
                                              address_l1=addr[0], address_l2=addr[1], address_l3=addr[2],
                                              address_city=addr[3], address_postcode=addr[4],
-                                             must_include_all=must_include_all, exact=exact)
+                                             must_include_all=must_include_all, exact=exact, get_all=get_all)
 
 if __name__ == "__main__":
     sys = BankingSystem()

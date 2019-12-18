@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+import tkinter.messagebox as tkmb
 
 import bank
 
@@ -83,6 +84,7 @@ class ScrollableFrame(tk.Frame):
 
 class PageBase(tk.Frame):
     """Basis for the page classes"""
+
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
 
@@ -94,11 +96,13 @@ class PageBase(tk.Frame):
 
     def page_update(self):
         """To be overridden with tasks that must be completed when this page is switched too"""
+
     pass
 
 
 class HomePage(PageBase):
     """First page the users will see"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -153,6 +157,7 @@ class HomePage(PageBase):
 
 class LandingPage(PageBase):
     """The page the user lands at when the log in"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -204,6 +209,7 @@ class LandingPage(PageBase):
 
 class CustomerSearch(PageBase):
     """Search function for customers"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -230,7 +236,7 @@ class CustomerSearch(PageBase):
         self.results_frame = results.widget_frame
 
         # Create the search input fields
-        row = 0  #  Use a row variable so we can quickly add widgets in and swap them easily without hardcoded rows
+        row = 0  # Use a row variable so we can quickly add widgets in and swap them easily without hardcoded rows
 
         # id
         tk.Label(query_frame, text="Customer ID: ", font=FONTS["m"]).grid(row=row, column=0, padx=10, sticky="e")
@@ -326,64 +332,72 @@ class CustomerSearch(PageBase):
         tk.Button(query_frame, text="Search", font=FONTS["m"], bg="#00dd00",
                   command=self.fetch_results).grid(row=row, column=0, columnspan=2, sticky="nsew", pady=20, padx=20)
 
-    def fetch_results(self):
+        row += 1
+        # Get all customers
+        tk.Button(query_frame, text="View All", font=FONTS["m"], bg="#00aa00",
+                  command=lambda: self.fetch_results(get_all=True)).grid(row=row, column=0, columnspan=2, sticky="nsew", pady=20, padx=20)
+
+    def fetch_results(self, get_all=False):
         """Fetch and show all the results"""
-        cid = self.cust_id.get()
-        fname = self.first_name.get()
-        lname = self.last_name.get()
+        if not get_all:
+            cid = self.cust_id.get()
+            fname = self.first_name.get()
+            lname = self.last_name.get()
 
-        addr = [self.addr1.get(),
-                self.addr2.get(),
-                self.addr3.get(),
-                self.addr_city.get(),
-                self.addr_post.get()]
+            addr = [self.addr1.get(),
+                    self.addr2.get(),
+                    self.addr3.get(),
+                    self.addr_city.get(),
+                    self.addr_post.get()]
 
-        include_all = self.include_all.get()
-        exact_field = self.exact_fields.get()
+            include_all = self.include_all.get()
+            exact_field = self.exact_fields.get()
 
-        if cid == "":
-            cid = None
-        else:
-            try:
-                cid = int(cid)
-            except:
-                self.cust_id.delete(0, tk.END)
-                self.cust_id.insert(0, "Integers Only")
+            if cid == "":
                 cid = None
+            else:
+                try:
+                    cid = int(cid)
+                except:
+                    self.cust_id.delete(0, tk.END)
+                    self.cust_id.insert(0, "Integers Only")
+                    cid = None
 
-        if fname == "":
-            fname = None
+            if fname == "":
+                fname = None
 
-        if lname == "":
-            lname = None
+            if lname == "":
+                lname = None
 
-        if addr[0] == "":
-            addr[0] = None
+            if addr[0] == "":
+                addr[0] = None
 
-        if addr[1] == "":
-            addr[1] = None
+            if addr[1] == "":
+                addr[1] = None
 
-        if addr[2] == "":
-            addr[2] = None
+            if addr[2] == "":
+                addr[2] = None
 
-        if addr[3] == "":
-            addr[3] = None
+            if addr[3] == "":
+                addr[3] = None
 
-        if addr[4] == "":
-            addr[4] = None
+            if addr[4] == "":
+                addr[4] = None
 
-        if include_all == 1:
-            include_all = True
+            if include_all == 1:
+                include_all = True
+            else:
+                include_all = False
+
+            if exact_field == 1:
+                exact_field = True
+            else:
+                exact_field = False
+
+            results, reply = SYSTEM.search_customers(cid=cid, fname=fname, lname=lname, addr=addr,
+                                                     must_include_all=include_all, exact=exact_field)
         else:
-            include_all = False
-
-        if exact_field == 1:
-            exact_field = True
-        else:
-            exact_field = False
-
-        results, reply = SYSTEM.search_customers(cid=cid, fname=fname, lname=lname, addr=addr,
-                                          must_include_all=include_all, exact=exact_field)
+            results, reply = SYSTEM.search_customers(get_all=get_all)
 
         # Wipe any previous results or data
         for child in self.results_frame.winfo_children():
@@ -400,7 +414,8 @@ class CustomerSearch(PageBase):
                 tk.Label(self.results_frame, font=FONTS["m"],
                          text=f"{cust.first_name} {cust.last_name}").grid(row=row, column=1, sticky="w", padx=5)
                 tk.Label(self.results_frame, font=FONTS["m"],
-                         text=f"{cust.address[0][0:10]}.. {cust.address[4]}").grid(row=row, column=2, sticky="w", padx=5)
+                         text=f"{cust.address[0][0:10]}.. {cust.address[4]}").grid(row=row, column=2, sticky="w",
+                                                                                   padx=5)
 
                 tk.Button(self.results_frame, text="View Customer", font=FONTS["m"],
                           command=lambda cid=cust.customer_id: self.view_customer(cid)).grid(row=row, column=4, padx=5,
@@ -432,6 +447,7 @@ class CustomerSearch(PageBase):
 
 class CustomerCreate(PageBase):
     """Page for creating a new customer"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -446,7 +462,7 @@ class CustomerCreate(PageBase):
 
         # Text shown on failiure
         self.fail_text = tk.Label(self, text="",
-                 font=FONTS["s"], fg="#dd0000")
+                                  font=FONTS["s"], fg="#dd0000")
         self.fail_text.pack(side="top")
 
         # Input parent frame
@@ -466,7 +482,8 @@ class CustomerCreate(PageBase):
         ttk.Separator(input_frame).grid(row=2, column=0, columnspan=3, sticky="ew", padx=10, pady=10)
 
         # Address
-        tk.Label(input_frame, text="Address", font=FONTS["m"]).grid(row=3, column=0, columnspan=3, sticky="nsew", pady=5)
+        tk.Label(input_frame, text="Address", font=FONTS["m"]).grid(row=3, column=0, columnspan=3, sticky="nsew",
+                                                                    pady=5)
 
         # Line 1
         tk.Label(input_frame, text="Line 1 *", font=FONTS["m"]).grid(row=4, column=0, sticky="w")
@@ -557,6 +574,7 @@ class CustomerCreate(PageBase):
 
 class CustomerUpdate(PageBase):
     """Update form for customer information"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -635,6 +653,45 @@ class CustomerUpdate(PageBase):
         # Submit button
         tk.Button(input_frame, text="Update", font=FONTS["m"], bg="#00dd00",
                   command=self.update_info).grid(row=10, column=1, columnspan=2, sticky="nsew", pady=30, padx=5)
+
+        # Delete button
+        tk.Button(self, text="Delete Customer", font=FONTS["m"], bg="#dd0000",
+                  command=self.delete_customer).pack(side="bottom", pady=10)
+
+    def delete_customer(self):
+        """Delete the customer from the system"""
+        if self.current_customer is not None:
+            # Check if the admin is sure of their choice
+            answer = tkmb.askyesno("Deleting customer.",
+                                   "Are you sure you would like to delete this customer "
+                                   "and all accounts associated with it?")
+            if answer:
+                cust_data = SYSTEM.get_customer_data(customer_id=self.current_customer.customer_id)
+                accounts = cust_data["accounts"]
+
+                total_refunded = 0
+
+                for account in accounts:
+                    total_refunded += account.balance
+
+                if total_refunded < 0:
+                    tkmb.showinfo("Money owed", f"This customer owes £{(total_refunded * -1) / 100}.")
+                else:
+                    tkmb.showinfo("Refund", f"This customer needs £{(total_refunded * -1) / 100} refunded.")
+
+                # Delete the customer entry via the BankSystem handler
+
+                status, reply = SYSTEM.delete_customer(self.current_customer.customer_id)
+
+                if status:
+                    self.controller.show_page(LandingPage.__name__)
+                else:
+                    tkmb.showerror("Could not delete accounts", f"Reason: {reply}")
+            else:
+                tkmb.showinfo("Deletion cancelled", "The account has not been deleted.")
+
+        else:
+            tkmb.showerror("Customer selection error", "No customer has been selected.")
 
     def update_info(self):
         """Gets the inputs, verifies the data, then sends the update to the system"""
@@ -747,6 +804,7 @@ class CustomerUpdate(PageBase):
 
 class CustomerView(PageBase):
     """View a customer and all their data"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -794,15 +852,14 @@ class CustomerView(PageBase):
         self.address_city_lbl.grid(row=4, column=1, columnspan=2, sticky="nsw")
         self.address_post_lbl.grid(row=5, column=1, columnspan=2, sticky="nsw")
 
-
         # Accounts
         accounts_frame = tk.LabelFrame(data_frame, text="Accounts", font=FONTS["s"])
         accounts_frame.grid(row=6, column=0, columnspan=3, sticky="nsew")
 
-        scrollFrame = ScrollableFrame(accounts_frame)
-        scrollFrame.grid(row=7, column=0, columnspan=4, sticky="nsew")
+        scrollframe = ScrollableFrame(accounts_frame)
+        scrollframe.grid(row=7, column=0, columnspan=4, sticky="nsew")
 
-        self.accounts_parent = scrollFrame.widget_frame
+        self.accounts_parent = scrollframe.widget_frame
 
     def load_customer_info(self, customer_id: int):
         """Load the customer information onto the page"""
@@ -845,13 +902,20 @@ class CustomerView(PageBase):
         row = 0
         for account in accounts:
             # name
-            tk.Label(self.accounts_parent, text=account.account_name + ": ", font=FONTS["s"]).grid(row=row, column=0, sticky="w", padx=5)
+            tk.Label(self.accounts_parent, text=account.account_name + ": ", font=FONTS["s"]).grid(row=row, column=0,
+                                                                                                   sticky="w", padx=5)
 
             # Balance
-            tk.Label(self.accounts_parent, text="£" + str((account.balance/100)), font=FONTS["s"]).grid(row=row, column=1, sticky="w", padx=5)
+            tk.Label(self.accounts_parent, text="£" + str((account.balance / 100)), font=FONTS["s"]).grid(row=row,
+                                                                                                          column=1,
+                                                                                                          sticky="w",
+                                                                                                          padx=5)
 
             # Interest Rate
-            tk.Label(self.accounts_parent, text=str(account.interest_rate) + "%", font=FONTS["s"]).grid(row=row, column=2, sticky="w", padx=5)
+            tk.Label(self.accounts_parent, text=str(account.interest_rate) + "%", font=FONTS["s"]).grid(row=row,
+                                                                                                        column=2,
+                                                                                                        sticky="w",
+                                                                                                        padx=5)
 
             # View button
             tk.Button(self.accounts_parent, text="View account", font=FONTS["s"],
@@ -876,6 +940,7 @@ class CustomerView(PageBase):
 
 class AccountView(PageBase):
     """View page for details about an account"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -938,8 +1003,8 @@ class AccountView(PageBase):
             self.fail_text.configure(text="")
 
             self.account_name_lbl.configure(text=f"{account.account_name}")
-            self.balance_lbl.configure(text=f"£{account.balance/100}")
-            self.overdraft_lbl.configure(text=f"£{account.overdraft_limit/100}")
+            self.balance_lbl.configure(text=f"£{account.balance / 100}")
+            self.overdraft_lbl.configure(text=f"£{account.overdraft_limit / 100}")
             self.interest_lbl.configure(text=f"{account.interest_rate}%")
             self.account_holder_lbl.configure(text=f"{account.customer.first_name} {account.customer.last_name}")
             self.customer_view_btn.configure(command=lambda: self.view_customer(account.customer.customer_id))
@@ -952,6 +1017,7 @@ class AccountView(PageBase):
 
 class AdminView(PageBase):
     """View details about the current admin account"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -971,7 +1037,7 @@ class AdminView(PageBase):
         SYSTEM.log_out()
         self.controller.show_page(HomePage.__name__)
 
+
 if __name__ == "__main__":
     win = Window()
     win.mainloop()
-
