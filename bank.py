@@ -225,6 +225,75 @@ class BankingSystem:
                                              address_city=addr[3], address_postcode=addr[4],
                                              must_include_all=must_include_all, exact=exact, get_all=get_all)
 
+    @require_login
+    def search_accounts(self, cust_first=None, cust_last=None, get_all=False, **kwargs):
+        """Search through the accounts which satisfy the given parameters"""
+        if get_all:
+            return self.connection.get_accounts(get_all=True)
+
+        accounts_return = []
+
+        if 'exact_fields' in kwargs:
+            exact_fields = kwargs['exact_fields']
+        else:
+            exact_fields = False
+
+        if 'must_include_all' in kwargs:
+            include_all = kwargs['must_include_all']
+        else:
+            include_all = False
+
+        # Check if customer is a search term
+        if cust_first is not None:
+            if cust_last is not None:
+                customers, reply = self.connection.get_customers(fname=cust_first, lname=cust_last,
+                                                                 exact=exact_fields, must_include_all=include_all)
+            else:
+                customers, reply = self.connection.get_customers(fname=cust_first,
+                                                                 exact=exact_fields, must_include_all=include_all)
+        elif cust_last is not None:
+            customers, reply = self.connection.get_customers(lname=cust_last,
+                                                             exact=exact_fields, must_include_all=include_all)
+        else:
+            customers = None
+
+        # Search for all the accounts that all the found customers have
+        if customers is not None:
+            for customer in customers:
+                data = self.get_customer_data(customer.customer_id)
+
+                for new_account in data["accounts"]:
+                    # Dont add an account if it is already in the list
+                    add_account = True
+                    for old_account in accounts_return:
+                        if new_account.account_id == old_account.account_id:
+                            add_account = False
+                            break
+
+                    if add_account:
+                        accounts_return.append(new_account)
+
+        # remove the customer data from the kwargs
+        if 'cust_first' in kwargs:
+            del(kwargs['cust_first'])
+        if 'cust_last' in kwargs:
+            del(kwargs['cust_last'])
+
+        other_accounts, reply = self.connection.get_accounts(**kwargs)
+
+        # Filter out any already stored accounts
+        for new_account in other_accounts:
+            add_account = True
+            for old_account in accounts_return:
+                if new_account.account_id == old_account.account_id:
+                    add_account = False
+                    break
+            if add_account:
+                accounts_return.append(new_account)
+
+        return accounts_return, reply
+
+
 if __name__ == "__main__":
     sys = BankingSystem()
     # Test log in

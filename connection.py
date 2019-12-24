@@ -131,44 +131,68 @@ class Connection:
                 return [], query_reply
 
     def get_accounts(self, accid=None, account_name=None, account_number=None, cust_id=None,
-                     balance=None, interest_rate=None, overdraft_limit=None,
-                     must_include_all: bool = False, return_as_dict: bool = False) -> tuple:
+                     balance=None, balance_opts='=', interest_rate=None, interest_opts='=',
+                     overdraft_limit=None, overdraft_opts='=',
+                     must_include_all: bool = False, exact_fields=False, return_as_dict: bool = False, get_all: bool = False) -> tuple:
         """Return a list of accounts from the database where all provided values are found"""
-        if accid is None and account_name is None and balance is None and interest_rate is None \
-                and overdraft_limit is None and cust_id is None:
+        if (accid is None and account_name is None and account_number is None and
+                balance is None and interest_rate is None and overdraft_limit is None and cust_id is None) \
+                and not get_all:
             return [], "No search data provided."
         else:
-            sql = "SELECT id, account_name, " \
-                  "account_number, balance, interest_rate, overdraft_limit, customer_id FROM accounts WHERE "
-
-            if must_include_all:
-                op = 'AND'
+            if get_all:
+                sql = "SELECT id, account_name, " \
+                      "account_number, balance, interest_rate, overdraft_limit, customer_id FROM accounts"
             else:
-                op = 'OR'
+                sql = "SELECT id, account_name, " \
+                      "account_number, balance, interest_rate, overdraft_limit, customer_id FROM accounts WHERE "
 
-            if accid is not None:
-                sql += "id=" + str(accid) + " " + op + " "
+                if must_include_all:
+                    op = 'AND'
+                else:
+                    op = 'OR'
 
-            if account_name is not None:
-                sql += "account_name='" + str(account_name) + "' " + op + " "
+                if accid is not None:
+                    sql += "id=" + str(accid) + " " + op + " "
 
-            if account_number is not None:
-                sql += "account_number=" + str(account_number) + " " + op + " "
+                if account_name is not None:
+                    if exact_fields:
+                        sql += "account_name='" + str(account_name) + "' " + op + " "
+                    else:
+                        sql += "account_name LIKE'%" + str(account_name) + "%' " + op + " "
 
-            if balance is not None:
-                sql += "balance=" + str(balance) + " " + op + " "
+                if account_number is not None:
+                    sql += "account_number=" + str(account_number) + " " + op + " "
 
-            if interest_rate is not None:
-                sql += "interest_rate=" + str(interest_rate) + " " + op + " "
+                if balance is not None:
+                    if balance_opts == ">":
+                        sql += "balance>=" + str(balance) + " " + op + " "
+                    elif balance_opts == "<":
+                        sql += "balance<=" + str(balance) + " " + op + " "
+                    else:
+                        sql += "balance=" + str(balance) + " " + op + " "
 
-            if overdraft_limit is not None:
-                sql += "overdraft_limit=" + str(overdraft_limit) + " " + op + " "
+                if interest_rate is not None:
+                    if interest_opts == ">":
+                        sql += "interest_rate>=" + str(interest_rate) + " " + op + " "
+                    elif interest_opts == "<":
+                        sql += "interest_rate<=" + str(interest_rate) + " " + op + " "
+                    else:
+                        sql += "interest_rate=" + str(interest_rate) + " " + op + " "
 
-            if cust_id is not None:
-                sql += "customer_id=" + str(cust_id) + " " + op + " "
+                if overdraft_limit is not None:
+                    if overdraft_opts == ">":
+                        sql += "overdraft_limit>=" + str(overdraft_limit) + " " + op + " "
+                    elif overdraft_opts == "<":
+                        sql += "overdraft_limit<=" + str(overdraft_limit) + " " + op + " "
+                    else:
+                        sql += "overdraft_limit=" + str(overdraft_limit) + " " + op + " "
 
-            # remove the operator (op) and two space from the end
-            sql = sql[:-(len(op) + 2)]
+                if cust_id is not None:
+                    sql += "customer_id=" + str(cust_id) + " " + op + " "
+
+                # remove the operator (op) and two space from the end
+                sql = sql[:-(len(op) + 2)]
 
             query_status, query_reply = self.__query(sql)
 
@@ -185,6 +209,7 @@ class Connection:
                     for res in results:
                         custs, reply = self.get_customers(cid=res["customer_id"])
                         if len(custs) != 1:
+                            # No customer connected to this account so dont add to the list
                             print(f'Found account id:{res["id"]}, though it is connected to {len(custs)} customers.')
                         else:
                             acc = BankAccount(res["id"], res["account_name"], res["balance"],

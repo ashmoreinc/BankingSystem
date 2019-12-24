@@ -206,6 +206,10 @@ class LandingPage(PageBase):
 
         tk.Label(account_manage, text="Account Management", font=FONTS["l"]).grid(row=0, column=0, columnspan=2)
 
+        # Account Buttons
+        tk.Button(account_manage, text="Search", font=FONTS["m"],
+                  command=lambda: controller.show_page(AccountSearch.__name__)).grid(row=1, column=0, sticky="w")
+
 
 class CustomerSearch(PageBase):
     """Search function for customers"""
@@ -938,6 +942,312 @@ class CustomerView(PageBase):
         self.controller.show_page(AccountView.__name__)
 
 
+class AccountSearch(PageBase):
+    """Search page for navigating accounts"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        # Title
+        tk.Label(self, text="Search Accounts", font=FONTS["l"]).pack(side="top", fill="x", pady=10)
+
+        # content frame
+        content_frame = tk.Frame(self)
+        content_frame.pack(side="top", fill="both", expand=True)
+
+        # input frame
+        query_frame = tk.Frame(content_frame)
+        query_frame.pack(side="left", fill="y", pady=10)
+
+        # Separate Frame
+        ttk.Separator(content_frame, orient="vertical").pack(side="left", fill="y", pady=10, padx=10)
+
+        # output/results frame
+        results = ScrollableFrame(content_frame)
+        results.pack(side="right", fill="both", expand=True)
+
+        self.results_frame = results.widget_frame
+
+        # Inputs
+        row = 0
+
+        # Customer Name
+        tk.Label(query_frame, text="First Name: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.first_name = tk.Entry(query_frame, font=FONTS["m"])
+        self.first_name.grid(row=row, column=1)
+
+        row += 1
+
+        tk.Label(query_frame, text="Last Name: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.last_name = tk.Entry(query_frame, font=FONTS["m"])
+        self.last_name.grid(row=row, column=1)
+
+        row += 1
+
+        # Separator
+        ttk.Separator(query_frame).grid(row=row, column=0, columnspan=3, sticky="ew", pady=5, padx=10)
+
+        row += 1
+
+        # Account Details
+        # ID
+        tk.Label(query_frame, text="Account ID: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.account_id = tk.Entry(query_frame, font=FONTS["m"])
+        self.account_id.grid(row=row, column=1)
+
+        row += 1
+
+        # name
+        tk.Label(query_frame, text="Account Name: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.account_name = tk.Entry(query_frame, font=FONTS["m"])
+        self.account_name.grid(row=row, column=1)
+
+        row += 1
+
+        # account number
+        tk.Label(query_frame, text="Account Number: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.account_number = tk.Entry(query_frame, font=FONTS["m"])
+        self.account_number.grid(row=row, column=1)
+
+        row += 1
+
+        # Separator
+        ttk.Separator(query_frame).grid(row=row, column=0, columnspan=3, sticky="ew", pady=5, padx=10)
+
+        row += 1
+
+        # Balance Details
+        # balance
+        tk.Label(query_frame, text="Balance: £", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.balance = tk.Entry(query_frame, font=FONTS["m"])
+        self.balance.grid(row=row, column=1)
+
+        #   balance options, >, =, <
+        row += 1
+        opts_frame = tk.Frame(query_frame)
+        opts_frame.grid(row=row, column=1, sticky="nsew")
+
+        self.balance_opts = tk.StringVar()
+        self.balance_opts.set("=")
+
+        tk.Radiobutton(opts_frame, text=">", variable=self.balance_opts,
+                       value=">", font=FONTS["m"]).grid(row=0, column=0, sticky="ew")
+
+        ttk.Separator(opts_frame, orient="vertical").grid(row=0, column=1, sticky="ns", padx=5, pady=5)
+
+        tk.Radiobutton(opts_frame, text="=", variable=self.balance_opts,
+                       value="=", font=FONTS["m"]).grid(row=0, column=2, sticky="ew")
+
+        ttk.Separator(opts_frame, orient="vertical").grid(row=0, column=3, sticky="ns", padx=5, pady=5)
+
+        tk.Radiobutton(opts_frame, text="<", variable=self.balance_opts,
+                       value="<", font=FONTS["m"]).grid(row=0, column=4, sticky="ew")
+
+        row += 1
+
+        # overdraft
+        tk.Label(query_frame, text="Overdraft: £", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.overdraft = tk.Entry(query_frame, font=FONTS["m"])
+        self.overdraft.grid(row=row, column=1)
+
+        #   overdraft options, >, =, <
+        row += 1
+        opts_frame = tk.Frame(query_frame)
+        opts_frame.grid(row=row, column=1, sticky="nsew")
+
+        self.overdraft_opts = tk.StringVar()
+        self.overdraft_opts.set("=")
+
+        tk.Radiobutton(opts_frame, text=">", variable=self.overdraft_opts,
+                       value=">", font=FONTS["m"]).grid(row=0, column=0, sticky="ew")
+
+        ttk.Separator(opts_frame, orient="vertical").grid(row=0, column=1, sticky="ns", padx=5, pady=5)
+
+        tk.Radiobutton(opts_frame, text="=", variable=self.overdraft_opts,
+                       value="=", font=FONTS["m"]).grid(row=0, column=2, sticky="ew")
+
+        ttk.Separator(opts_frame, orient="vertical").grid(row=0, column=3, sticky="ns", padx=5, pady=5)
+
+        tk.Radiobutton(opts_frame, text="<", variable=self.overdraft_opts,
+                       value="<", font=FONTS["m"]).grid(row=0, column=4, sticky="ew")
+
+        row += 1
+
+        # Interest Rate
+        tk.Label(query_frame, text="Interest Rate: %", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.interest = tk.Entry(query_frame, font=FONTS["m"])
+        self.interest.grid(row=row, column=1)
+
+        #   overdraft options, >, =, <
+        row += 1
+        opts_frame = tk.Frame(query_frame)
+        opts_frame.grid(row=row, column=1, sticky="nsew")
+
+        self.interest_opts = tk.StringVar()
+        self.interest_opts.set("=")
+
+        tk.Radiobutton(opts_frame, text=">", variable=self.interest_opts,
+                       value=">", font=FONTS["m"]).grid(row=0, column=0, sticky="ew")
+
+        ttk.Separator(opts_frame, orient="vertical").grid(row=0, column=1, sticky="ns", padx=5, pady=5)
+
+        tk.Radiobutton(opts_frame, text="=", variable=self.interest_opts,
+                       value="=", font=FONTS["m"]).grid(row=0, column=2, sticky="ew")
+
+        ttk.Separator(opts_frame, orient="vertical").grid(row=0, column=3, sticky="ns", padx=5, pady=5)
+
+        tk.Radiobutton(opts_frame, text="<", variable=self.interest_opts,
+                       value="<", font=FONTS["m"]).grid(row=0, column=4, sticky="ew")
+
+        row += 1
+
+        # Separate
+        ttk.Separator(query_frame).grid(row=row, column=0, columnspan=2, sticky="ew", pady=5, padx=10)
+
+        row += 1
+
+        # Include all button
+        tk.Label(query_frame, text="Results must include every field", wraplength=120, width=15,
+                 font=FONTS["s"]).grid(row=row, column=0)
+
+        self.include_all = tk.IntVar()
+        tk.Checkbutton(query_frame, variable=self.include_all).grid(row=row, column=1, sticky="w", padx=10)
+
+        row += 1
+
+        # Separate
+        ttk.Separator(query_frame).grid(row=row, column=0, columnspan=2, sticky="ew", pady=5, padx=10)
+
+        row += 1
+
+        # Exact
+        tk.Label(query_frame, text="Fields must be exact", wraplength=120, width=15, font=FONTS["s"]).grid(
+            row=row, column=0)
+
+        self.exact_fields = tk.IntVar()
+        tk.Checkbutton(query_frame, variable=self.exact_fields).grid(row=row, column=1, sticky="w", padx=10)
+
+        row += 1
+        # search button
+        tk.Button(query_frame, text="Search", font=FONTS["m"], bg="#00dd00",
+                  command=self.fetch_results).grid(row=row, column=0, columnspan=2, sticky="nsew", pady=10)
+
+        row += 1
+
+        # View all
+        tk.Button(query_frame, text="View All", font=FONTS["m"], bg="#00dd00",
+                  command=lambda: self.fetch_results(get_all=True)).grid(row=row, column=0, columnspan=2,
+                                                                         sticky="nsew", pady=10)
+
+    def fetch_results(self, get_all=False):
+        """Fetch's and displays all results"""
+        kwargs = {}
+
+        def check_fill(param_name, inp, type=str):
+            """Checks if a input is valid and adds it to the kwargs dict if it is"""
+            if len(inp) > 0:
+                try:
+                    inp = type(inp)
+                    kwargs[param_name] = inp
+                except:
+                    print(f"Could not convert '{inp}' to '{str(type)}'")
+        if get_all:
+            accounts, reply = SYSTEM.search_accounts(get_all=True)
+        else:
+            kwargs = {}
+            fname = self.first_name.get()
+            check_fill('cust_first', fname)
+
+            lname = self.last_name.get()
+            check_fill('cust_last', lname)
+
+            acc_id = self.account_id.get()
+            check_fill('accid', acc_id, type=int)
+
+            acc_name = self.account_name.get()
+            check_fill('account_name', acc_name)
+
+            acc_num = self.account_number.get()
+            check_fill('account_number', acc_num, type=int)
+
+            balance = self.balance.get()
+            check_fill('balance', balance, type=int)
+            # Convert the input into pence, as that is how the data is stored
+            if 'balance' in kwargs:
+                kwargs['balance'] = kwargs['balance'] * 100
+            balance_opt = self.balance_opts.get()
+            check_fill('balance_opts', balance_opt)
+
+            overdraft = self.overdraft.get()
+            check_fill('overdraft_limit', overdraft, type=int)
+            # Convert the input into pence, as that is how the data is stored
+            if 'overdraft_limit' in kwargs:
+                kwargs['overdraft_limit'] = kwargs['overdraft_limit'] * 100
+            overdraft_opt = self.overdraft_opts.get()
+            check_fill('overdraft_opts', overdraft_opt)
+
+            interest = self.interest.get()
+            check_fill('interest_rate', interest, type=float)
+            interest_opt = self.interest_opts.get()
+            check_fill('interest_opts', interest_opt)
+
+            # We can use bool() on these as they are intvars with values of 1 or 0
+            include_all = bool(self.include_all.get())
+            exact_field = bool(self.exact_fields.get())
+
+            kwargs["exact_fields"] = exact_field
+            kwargs["must_include_all"] = include_all
+
+            accounts, reply = SYSTEM.search_accounts(**kwargs)
+
+        # Clear the results frame
+        for child in self.results_frame.winfo_children():
+            child.destroy()
+
+        # Display the result
+        if len(accounts) < 1:
+            tk.Label(self.results_frame, text=reply, font=FONTS["m"], fg="#dd0000").pack(side="top", fill="x")
+        else:
+            row = 0
+            for account in accounts:
+                # ID
+                tk.Label(self.results_frame, text=f"{account.account_id}: ",
+                         font=FONTS["m"]).grid(row=row, column=0, sticky="w", padx=5)
+
+                # Account Name
+                tk.Label(self.results_frame, text=f"{account.account_name}",
+                         font=FONTS["m"]).grid(row=row, column=1, sticky="w", padx=5)
+
+                # Account Customer Name
+                tk.Label(self.results_frame, text=f"{account.customer.first_name}  {account.customer.last_name}",
+                         font=FONTS["m"]).grid(row=row, column=2, sticky="w", padx=5)
+
+                # Account Balance
+                tk.Label(self.results_frame, text=f"£{account.balance/100}",
+                         font=FONTS["m"]).grid(row=row, column=3, sticky="w", padx=5)
+
+                # Show account button
+                tk.Button(self.results_frame, text="View Account", font=FONTS["m"],
+                          command=lambda aid=account.account_id: self.show_account(aid)).grid(row=row, column=4,
+                                                                                              sticky="nsew")
+
+                row += 1
+
+    def show_account(self, account_id):
+        """Load the account view page with the customer given and then show that page"""
+        self.controller.Pages[AccountView.__name__].load_account_info(account_id)
+        self.controller.show_page(AccountView.__name__)
+
+
 class AccountView(PageBase):
     """View page for details about an account"""
 
@@ -963,28 +1273,33 @@ class AccountView(PageBase):
         self.account_name_lbl = tk.Label(data_frame, text="", font=FONTS["m"])
         self.account_name_lbl.grid(row=0, column=1, sticky="w")
 
+        # Account Number
+        tk.Label(data_frame, text="Account Number: ", font=FONTS["m"]).grid(row=1, column=0, sticky="w")
+        self.account_num_label = tk.Label(data_frame, text="", font=FONTS["m"])
+        self.account_num_label.grid(row=1, column=1, sticky="w")
+
         # Account Balance
-        tk.Label(data_frame, text="Balance: ", font=FONTS["m"]).grid(row=1, column=0, sticky="w")
+        tk.Label(data_frame, text="Balance: ", font=FONTS["m"]).grid(row=2, column=0, sticky="w")
         self.balance_lbl = tk.Label(data_frame, text="£-.--", font=FONTS["m"])
-        self.balance_lbl.grid(row=1, column=1, sticky="w")
+        self.balance_lbl.grid(row=2, column=1, sticky="w")
 
         # Account overdraft
-        tk.Label(data_frame, text="Overdraft limit: ", font=FONTS["m"]).grid(row=2, column=0, sticky="w")
+        tk.Label(data_frame, text="Overdraft limit: ", font=FONTS["m"]).grid(row=3, column=0, sticky="w")
         self.overdraft_lbl = tk.Label(data_frame, text="£-.--", font=FONTS["m"])
-        self.overdraft_lbl.grid(row=2, column=1, sticky="w")
+        self.overdraft_lbl.grid(row=3, column=1, sticky="w")
 
         # Account interest rate
-        tk.Label(data_frame, text="Interest rate: ", font=FONTS["m"]).grid(row=3, column=0, sticky="w")
+        tk.Label(data_frame, text="Interest rate: ", font=FONTS["m"]).grid(row=4, column=0, sticky="w")
         self.interest_lbl = tk.Label(data_frame, text="-.-%", font=FONTS["m"])
-        self.interest_lbl.grid(row=3, column=1, sticky="w")
+        self.interest_lbl.grid(row=4, column=1, sticky="w")
 
         # Account Holder
-        tk.Label(data_frame, text="Account Holder: ", font=FONTS["m"]).grid(row=4, column=0, sticky="w")
+        tk.Label(data_frame, text="Account Holder: ", font=FONTS["m"]).grid(row=5, column=0, sticky="w")
         self.account_holder_lbl = tk.Label(data_frame, text="-.-%", font=FONTS["m"])
-        self.account_holder_lbl.grid(row=4, column=1, sticky="w")
+        self.account_holder_lbl.grid(row=5, column=1, sticky="w")
 
         self.customer_view_btn = tk.Button(data_frame, text="View Account", font=FONTS["m"])
-        self.customer_view_btn.grid(row=4, column=2, sticky="nsew")
+        self.customer_view_btn.grid(row=5, column=2, sticky="nsew")
 
     def load_account_info(self, account_id: int):
         """Load account information into the page from the account connected to the given id"""
@@ -1003,6 +1318,7 @@ class AccountView(PageBase):
             self.fail_text.configure(text="")
 
             self.account_name_lbl.configure(text=f"{account.account_name}")
+            self.account_num_label.configure(text=f"{account.account_num}")
             self.balance_lbl.configure(text=f"£{account.balance / 100}")
             self.overdraft_lbl.configure(text=f"£{account.overdraft_limit / 100}")
             self.interest_lbl.configure(text=f"{account.interest_rate}%")
