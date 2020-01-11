@@ -210,6 +210,9 @@ class LandingPage(PageBase):
         tk.Button(account_manage, text="Search", font=FONTS["m"],
                   command=lambda: controller.show_page(AccountSearch.__name__)).grid(row=1, column=0, sticky="w")
 
+        tk.Button(account_manage, text="Create", font=FONTS["m"], state="disabled",
+                  command=lambda: controller.show_page(AccountCreate.__name__)).grid(row=2, column=0, sticky="w")
+
 
 class CustomerSearch(PageBase):
     """Search function for customers"""
@@ -464,7 +467,7 @@ class CustomerCreate(PageBase):
         tk.Label(self, text="All fields with * are required.",
                  font=FONTS["s"], fg="#dd0000").pack(side="top")
 
-        # Text shown on failiure
+        # Text shown on failure
         self.fail_text = tk.Label(self, text="",
                                   font=FONTS["s"], fg="#dd0000")
         self.fail_text.pack(side="top")
@@ -681,7 +684,7 @@ class CustomerUpdate(PageBase):
                 if total_refunded < 0:
                     tkmb.showinfo("Money owed", f"This customer owes £{(total_refunded * -1) / 100}.")
                 else:
-                    tkmb.showinfo("Refund", f"This customer needs £{(total_refunded * -1) / 100} refunded.")
+                    tkmb.showinfo("Refund", f"This customer needs £{(total_refunded) / 100} refunded.")
 
                 # Delete the customer entry via the BankSystem handler
 
@@ -930,7 +933,7 @@ class CustomerView(PageBase):
     def update_customer(self):
         """Go to the customer update page for this customer"""
         if self.current_customer is None:
-            pass
+            tkmb.showerror("Customer Error.", "No customer is currently selected. Please go to Home and try again.")
         else:
             self.controller.Pages[CustomerUpdate.__name__].set_customer(self.current_customer)
             self.controller.show_page(CustomerUpdate.__name__)
@@ -1247,6 +1250,253 @@ class AccountSearch(PageBase):
         self.controller.Pages[AccountView.__name__].load_account_info(account_id)
         self.controller.show_page(AccountView.__name__)
 
+    def page_update(self):
+        """Runs when the page is shown"""
+        # Clear the results frame
+        for child in self.results_frame.winfo_children():
+            child.destroy()
+
+
+class AccountCreate(PageBase):
+    """Create an account page"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        # Title
+        tk.Label(self, text="New Account", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+
+        # Required fields notice
+        tk.Label(self, text="All fields with * are required.",
+                 font=FONTS["s"], fg="#dd0000").pack(side="top")
+
+        # Text shown on failure
+        self.fail_text = tk.Label(self, text="",
+                                  font=FONTS["s"], fg="#dd0000")
+        self.fail_text.pack(side="top")
+
+        # Input parent frame
+        input_frame = tk.Frame(self)
+        input_frame.pack(side="top", fill="y", pady=30)
+
+        row = 0
+
+        # Customer ID
+        tk.Label(input_frame, text="Customer ID *: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.cust_id_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.cust_id_ent.grid(row=row, column=1, sticky="nsew")
+
+
+class AccountUpdate(PageBase):
+    """Update and delete account information"""
+
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        self.current_account = None
+
+        # Title
+        tk.Label(self, text="Account Update", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+        # Required fields notice
+        tk.Label(self, text="All fields with * are to be filled.",
+                 font=FONTS["s"], fg="#dd0000").pack(side="top")
+
+        self.fail_text = tk.Label(self, text="", font=FONTS["m"], fg="#dd0000")
+        self.fail_text.pack(side="top", fill="x")
+
+        # Input frame
+        input_frame = tk.Frame(self)
+        input_frame.pack(side="top", fill="y")
+
+        row = 0
+
+        # Account ID
+        # Label
+        tk.Label(input_frame, text="Account ID: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.account_id_lbl = tk.Label(input_frame, text="1", font=FONTS["m"])
+        self.account_id_lbl.grid(row=row, column=1, sticky="w")
+
+        row += 1
+
+        # Account Number
+        tk.Label(input_frame, text="Account Number: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.account_num_lbl = tk.Label(input_frame, text="1111222233334444", font=FONTS["m"])
+        self.account_num_lbl.grid(row=row, column=1, sticky="w")
+
+        row += 1
+
+        # Balance:
+        tk.Label(input_frame, text="Balance: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.balance_lbl = tk.Label(input_frame, text="£1000.00", font=FONTS["m"])
+        self.balance_lbl.grid(row=row, column=1, sticky="w")
+
+        row += 1
+
+        # Separator
+        ttk.Separator(input_frame).grid(row=row, column=0, columnspan=3, sticky="nsew", padx=10)
+
+        row += 1
+
+        # Account name
+        tk.Label(input_frame, text="Account Name *: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e", pady=5)
+
+        self.account_name_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.account_name_ent.grid(row=row, column=1, sticky="nsew", pady=5)
+
+        row += 1
+
+        # Interest Rate
+        tk.Label(input_frame, text="Interest Rate *: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e", pady=5)
+
+        self.interest_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.interest_ent.grid(row=row, column=1, sticky="nsew", pady=5)
+
+        tk.Label(input_frame, text="%", font=FONTS["m"]).grid(row=row, column=2, sticky="w", pady=5)
+
+        row += 1
+
+        # Overdraft Limit
+        tk.Label(input_frame, text="Overdraft Limit *: £", font=FONTS["m"]).grid(row=row, column=0, sticky="e", pady=5)
+
+        self.overdraft_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.overdraft_ent.grid(row=row, column=1, sticky="nsew", pady=5)
+
+        # Submit button
+        tk.Button(input_frame, text="Update", font=FONTS["m"], bg="#00dd00",
+                  command=self.update_info).grid(row=10, column=0, columnspan=3, sticky="nsew", pady=30, padx=5)
+
+        # Delete button
+        tk.Button(self, text="Delete Customer", font=FONTS["m"], bg="#dd0000",
+                  command=self.delete_account).pack(side="bottom", pady=10)
+
+    def update_info(self):
+        """Validates the data input and then updates the entry."""
+        acc_name = self.account_name_ent.get()
+        overdraft_limit = self.overdraft_ent.get()
+        interest_rate = self.interest_ent.get()
+
+        run_query = True
+        kwargs = {}
+
+        if len(acc_name) > 0:
+            kwargs["account_name"] = acc_name
+            self.account_name_ent.configure(highlightthickness=0)
+        else:
+            self.account_name_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000",
+                                            highlightthickness=2)
+            run_query = False
+
+        if len(overdraft_limit) > 0:
+            # Turn overdraft into a float, then an integer to represent the overdraft in pence,
+            #   as that's how it is stored
+            try:
+                overdraft_limit = float(overdraft_limit)
+                overdraft_limit = int(overdraft_limit * 100)
+                kwargs["overdraft_limit"] = overdraft_limit
+                self.overdraft_ent.configure(highlightthickness=0)
+            except:
+                tkmb.showerror("Input error.", "Overdraft entry must be a number only.")
+                self.overdraft_ent.configure(highlightbackground="#dd0000",
+                                             highlightcolor="#dd0000", highlightthickness=2)
+                run_query = False
+        else:
+            self.overdraft_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+            run_query = False
+
+        if len(interest_rate) > 0:
+            # Turn interest into a float.
+            try:
+                interest_rate = float(interest_rate)
+                kwargs["interest_rate"] = interest_rate
+                self.interest_ent.configure(highlightthickness=0)
+            except:
+                tkmb.showerror("Input error.", "Interest rate entry must be a number only.")
+                self.interest_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000",
+                                            highlightthickness=2)
+                return
+        else:
+            self.interest_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+            run_query = False
+
+        if run_query:
+            status, reply, account = SYSTEM.update_account(self.current_account.account_id, **kwargs)
+
+            if status:
+                self.current_account = account
+
+                self.controller.Pages[AccountView.__name__].load_account_info(self.current_account.account_id)
+                self.controller.show_page(AccountView.__name__)
+            else:
+                self.fail_text.configure(text=reply)
+
+        else:
+            self.fail_text.configure(text="All fields marked * must be set, and must be properly formatted.")
+
+    def delete_account(self):
+        """Delete the account from the system. Verify this is intended first."""
+        if self.current_account is not None:
+            answer = tkmb.askyesno("Deleting Account.",
+                                   "Are you sure you would like to delete this account "
+                                   "and all data associated with it.")
+
+            if answer:
+                refund_amount = self.current_account.balance
+
+                if refund_amount < 0:
+                    tkmb.showinfo("Money owed.", f"The customer owes £{(refund_amount / 100) * -1}")
+                else:
+                    tkmb.showinfo("Refund.", f"The customer is owed £{(refund_amount / 100)}.")
+
+                # Delete the account entry
+                status, reply = SYSTEM.delete_account(self.current_account.account_id)
+
+                if status:
+                    self.controller.show_page(LandingPage.__name__)
+                else:
+                    tkmb.showerror("Account could not be deleted.", f"Reason: {reply}")
+            else:
+                tkmb.showinfo("Account deletion cancelled.", "The account has not been deleted.")
+
+        else:
+            tkmb.showerror("Account Error.", "Cannot delete account as no account is selected. Please try again.")
+
+    def load_account_info(self):
+        """Load the customer info onto the page"""
+        if self.current_account is None:
+            tkmb.showerror("Account Error.", "There was an error loading the account. No account has been selected.")
+
+            # TODO: Clear fields
+        else:
+            self.account_id_lbl.configure(text=str(self.current_account.account_id))
+            self.account_num_lbl.configure(text=str(self.current_account.account_num))
+            self.balance_lbl.configure(text=f"£{self.current_account.balance/100}")
+
+            self.account_name_ent.delete(0, "end")
+            self.account_name_ent.insert(0, self.current_account.account_name)
+
+            self.overdraft_ent.delete(0, "end")
+            self.overdraft_ent.insert(0, str(self.current_account.overdraft_limit/100))
+
+            self.interest_ent.delete(0, "end")
+            self.interest_ent.insert(0, str(self.current_account.interest_rate))
+
+    def set_account(self, account):
+        """Sets the account to be updated"""
+        self.current_account = account
+
+    def page_update(self):
+        """Runs when the page is shown"""
+        self.load_account_info()
+
+        self.fail_text.configure(text="")
+
 
 class AccountView(PageBase):
     """View page for details about an account"""
@@ -1256,8 +1506,17 @@ class AccountView(PageBase):
 
         create_navigation_bar(self, controller)
 
+        self.current_account = None
+
         # Title
-        tk.Label(self, text="Account Information", font=FONTS["l"]).pack(side="top", fill="x", pady=15)
+        header = tk.Frame(self)
+        header.pack(side="top", pady=15)
+
+        tk.Label(header, text="Account Information", font=FONTS["l"]).grid(row=0, column=0, sticky="nsew")
+
+        # Update button
+        tk.Button(header, text="Update Account", font=FONTS["m"],
+                  command=self.update_account).grid(row=0, column=1, sticky="nsew")
 
         # TODO: Add buttons to take us too update, transfer, withdraw etc
         # Warning text
@@ -1325,10 +1584,20 @@ class AccountView(PageBase):
             self.account_holder_lbl.configure(text=f"{account.customer.first_name} {account.customer.last_name}")
             self.customer_view_btn.configure(command=lambda: self.view_customer(account.customer.customer_id))
 
+        self.current_account = account
+
     def view_customer(self, customer_id: int):
         """Opens the customer page and sets it up to view the customer with given id"""
         self.controller.Pages[CustomerView.__name__].load_customer_info(customer_id)
         self.controller.show_page(CustomerView.__name__)
+
+    def update_account(self):
+        """Send the user to the account update page"""
+        if self.current_account is None:
+            tkmb.showerror("Account Error." "No account is currently selected. Please go to Home and then try again.")
+        else:
+            self.controller.Pages[AccountUpdate.__name__].set_account(self.current_account)
+            self.controller.show_page(AccountUpdate.__name__)
 
 
 class AdminView(PageBase):

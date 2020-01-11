@@ -423,6 +423,42 @@ class Connection:
             else:
                 return False, repl, None
 
+    def update_account(self, accid, account_name: str = None, overdraft_limit: int = None,
+                       interest_rate: float = None) -> tuple:
+        """Update the account details with the given data"""
+        if account_name is None and overdraft_limit is None and interest_rate is None:
+            return False, "No new data has been provided.", None
+        else:
+            sql = "UPDATE accounts SET "
+
+            if account_name is not None:
+                sql += f"account_name='{account_name}', "
+
+            if overdraft_limit is not None:
+                sql += f"overdraft_limit={overdraft_limit}, "
+
+            if interest_rate is not None:
+                sql += f"interest_rate={interest_rate}, "
+
+            # Remove the trailing ", " that is present
+            sql = sql[:-2]
+
+            # Add the where statement
+            sql += f" WHERE id={accid}"
+
+            status, reply = self.__query(sql)
+
+            if status:
+                # Get the new account
+                # As we are using the id and id is the primary key, there should always be only one account found
+                self.conn.commit()
+                acc = self.get_accounts(accid=accid)[0][0]
+
+                return status, "Successfully update account info", acc
+            else:
+                return status, reply, None
+
+
     # Create new table entries
     def create_customer(self, fname: str, lname: str, addr: list) -> tuple:
         """Create a new table entry for the customer"""

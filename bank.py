@@ -147,9 +147,19 @@ class BankingSystem:
         return self.connection.create_customer(fname, lname, addr)
 
     @require_login
+    def update_account(self, accid, **kwargs):
+        """Update the account data with the given data"""
+        return self.connection.update_account(accid, **kwargs)
+
+    @require_login
     def update_customer(self, cid, **kwargs):
-        """Updates the customers data with the givren info"""
+        """Updates the customers data with the given info"""
         return self.connection.update_customer(cid, **kwargs)
+
+    @require_login
+    def delete_account(self, accid):
+        """Delete an account from the system with the given id."""
+        return self.connection.delete_account(accid)
 
     @require_login
     def delete_customer(self, cid):
