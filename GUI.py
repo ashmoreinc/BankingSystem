@@ -34,7 +34,7 @@ class Window(tk.Tk):
             p.grid(row=0, column=0, sticky="nsew")
 
             p.initialise()
-        self.show_page(HomePage.__name__)
+        self.show_page(LoginPage.__name__)
 
     def show_page(self, page_name):
         page = self.Pages[page_name]
@@ -100,7 +100,7 @@ class PageBase(tk.Frame):
     pass
 
 
-class HomePage(PageBase):
+class LoginPage(PageBase):
     """First page the users will see"""
 
     def __init__(self, parent, controller):
@@ -128,6 +128,9 @@ class HomePage(PageBase):
         self.password_entry = tk.Entry(form_frame, show="*", font=FONTS["m"], width=20)
         self.password_entry.grid(row=1, column=1, sticky="ew")
 
+        # Bind the enter/return key to the login function. UX so that the user can press enter instead of button press.
+        self.password_entry.bind("<Return>", lambda event: self.login())
+
         # Failure text
         self.fail_text = tk.Label(self, text="", font=FONTS["m"], fg="#dd0000")
         self.fail_text.pack(side="top", fill="x", pady=5, padx=5)
@@ -153,6 +156,9 @@ class HomePage(PageBase):
         # Clear all input fields so they aren't stored for when the system has been logged out of
         self.username_entry.delete(0, tk.END)
         self.password_entry.delete(0, tk.END)
+
+        # Put the focus on the username field
+        self.username_entry.focus()
 
 
 class LandingPage(PageBase):
@@ -182,8 +188,6 @@ class LandingPage(PageBase):
         # Report frame Label
         tk.Label(reports_frame, text="Reports", font=FONTS["l"]).pack(side="top", fill="x", padx=50)
 
-        # TODO: Create Report functionality
-
         # Customer Control
         cust_manage = tk.Frame(customer_frame)
         cust_manage.pack(side="top", fill="both", expand=True)
@@ -210,7 +214,7 @@ class LandingPage(PageBase):
         tk.Button(account_manage, text="Search", font=FONTS["m"],
                   command=lambda: controller.show_page(AccountSearch.__name__)).grid(row=1, column=0, sticky="w")
 
-        tk.Button(account_manage, text="Create", font=FONTS["m"], state="disabled",
+        tk.Button(account_manage, text="Create", font=FONTS["m"],
                   command=lambda: controller.show_page(AccountCreate.__name__)).grid(row=2, column=0, sticky="w")
 
 
@@ -1472,7 +1476,15 @@ class AccountUpdate(PageBase):
         if self.current_account is None:
             tkmb.showerror("Account Error.", "There was an error loading the account. No account has been selected.")
 
-            # TODO: Clear fields
+            self.account_id_lbl.configure(text="")
+            self.account_num_lbl.configure(text="")
+            self.balance_lbl.configure(text="")
+
+            self.account_name_ent.delete(0, "end")
+
+            self.overdraft_ent.delete(0, "end")
+
+            self.interest_ent.delete(0, "end")
         else:
             self.account_id_lbl.configure(text=str(self.current_account.account_id))
             self.account_num_lbl.configure(text=str(self.current_account.account_num))
@@ -1518,7 +1530,7 @@ class AccountView(PageBase):
         tk.Button(header, text="Update Account", font=FONTS["m"],
                   command=self.update_account).grid(row=0, column=1, sticky="nsew")
 
-        # TODO: Add buttons to take us too update, transfer, withdraw etc
+        # TODO: Add buttons to take us too transfer, withdraw etc
         # Warning text
         self.fail_text = tk.Label(self, text="", font=FONTS["m"], fg="#dd0000")
         self.fail_text.pack(side="top", fill="y", pady=15)
@@ -1611,8 +1623,6 @@ class AdminView(PageBase):
         # title
         tk.Label(self, text="Your account", font=FONTS["l"]).pack(side="top", fill="x", pady=20)
 
-        # TODO: Account details and update
-
         # Log out button
         tk.Button(self, text="Log out", font=FONTS["m"], bg="#dd0000", width=10,
                   command=self.logout).pack(side="bottom", pady=20)
@@ -1620,8 +1630,15 @@ class AdminView(PageBase):
     def logout(self):
         """Logs the user out and returns to the home page"""
         SYSTEM.log_out()
-        self.controller.show_page(HomePage.__name__)
+        self.controller.show_page(LoginPage.__name__)
 
+
+# TODO: Transfer and withdraw and deposit money.
+# TODO: Admin Account Management (view/update/delete)
+#       Include the password change function, maybe even add a 'days since last change' notifier
+# TODO: Reports
+# TODO: Alter the rights restrictions on certain functions, cross reference this with moodle docs
+# TODO: GUI tweaks.
 
 if __name__ == "__main__":
     win = Window()
