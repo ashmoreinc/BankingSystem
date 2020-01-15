@@ -88,8 +88,6 @@ class BankAccount:
     def calculate_interest_for_year(self):
         """Calculates interest for 1 year"""
         interest = self.balance * (self.interest_rate / 100)
-        print(self.balance)
-        print(interest)
         return interest
 
 
@@ -135,5 +133,5 @@ class Admin(User):
 
 
 if __name__ == "__main__":
-    print("Only to be used as a module.")
+    print("Module Only use")
     exit()

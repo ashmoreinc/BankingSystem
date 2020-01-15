@@ -29,8 +29,8 @@ def require_full_rights(function):
 
 class BankingSystem:
     """Class that handles the banking system"""
-    def __init__(self):
-        self.connection = Connection()
+    def __init__(self, db_filepath="Files/Data/data.db"):
+        self.connection = Connection(db_filepath=db_filepath)
 
         self.logged_in = False
         self.admin = None
@@ -83,7 +83,6 @@ class BankingSystem:
         accs = self.connection.get_admin(username=username)
 
         if len(accs) > 0:
-            print("To many users!")
             return False
 
         # Hash the password
@@ -473,4 +472,5 @@ class BankingSystem:
         return {"customers_pop": len(customers)}
 
 if __name__ == "__main__":
-    print("Module Only use")
+    print("Module Only")
+    exit()

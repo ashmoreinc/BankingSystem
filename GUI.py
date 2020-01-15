@@ -163,7 +163,6 @@ class LoginPage(PageBase):
 
 class LandingPage(PageBase):
     """The page the user lands at when the log in"""
-
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -192,14 +191,14 @@ class LandingPage(PageBase):
         cust_manage = tk.Frame(customer_frame)
         cust_manage.pack(side="top", fill="both", expand=True)
 
-        tk.Label(cust_manage, text="Customer Management", font=FONTS["l"]).grid(row=0, column=0, columnspan=2)
+        tk.Label(cust_manage, text="Customer Management", font=FONTS["l"]).grid(row=0, column=0, columnspan=2, pady=25)
 
         # Customer Buttons
         tk.Button(cust_manage, text="Search", font=FONTS["m"],
-                  command=lambda: controller.show_page(CustomerSearch.__name__)).grid(row=1, column=0, sticky="w")
+                  command=lambda: controller.show_page(CustomerSearch.__name__)).grid(row=1, column=0, sticky="nesw")
 
         tk.Button(cust_manage, text="Create", font=FONTS["m"],
-                  command=lambda: controller.show_page(CustomerCreate.__name__)).grid(row=1, column=1, sticky="w")
+                  command=lambda: controller.show_page(CustomerCreate.__name__)).grid(row=1, column=1, sticky="nesw")
 
         # Separate customer and account section
         ttk.Separator(customer_frame).pack(side="top", fill="x")
@@ -208,25 +207,57 @@ class LandingPage(PageBase):
         account_manage = tk.Frame(customer_frame)
         account_manage.pack(side="top", fill="both", expand=True)
 
-        tk.Label(account_manage, text="Account Management", font=FONTS["l"]).grid(row=0, column=0, columnspan=2)
+        tk.Label(account_manage, text="Account Management", font=FONTS["l"]).grid(row=0, column=0,
+                                                                                  columnspan=2, pady=25)
 
         # Account Buttons
         tk.Button(account_manage, text="Search", font=FONTS["m"],
-                  command=lambda: controller.show_page(AccountSearch.__name__)).grid(row=1, column=0, sticky="w")
+                  command=lambda: controller.show_page(AccountSearch.__name__)).grid(row=1, column=0, sticky="nsew")
 
         tk.Button(account_manage, text="Create", font=FONTS["m"],
-                  command=lambda: controller.show_page(AccountCreate.__name__)).grid(row=1, column=1, sticky="w")
+                  command=lambda: controller.show_page(AccountCreate.__name__)).grid(row=1, column=1, sticky="nsew")
 
         tk.Button(account_manage, text="Money Transfer", font=FONTS["m"],
-                  command=lambda: controller.show_page(AccountTransfer.__name__)).grid(row=1, column=2, sticky="w")
+                  command=lambda: controller.show_page(AccountTransfer.__name__)).grid(row=1, column=2, sticky="nsew")
 
         tk.Button(account_manage, text="Deposit/Withdraw", font=FONTS["m"],
                   command=lambda: controller.show_page(AccountDepositWithdraw.__name__)).grid(row=1, column=3,
-                                                                                              sticky="w")
+                                                                                              sticky="nsew")
         # Reports section
-        tk.Button(reports_frame, text="Full report", font=FONTS["m"],
-                  command=lambda: controller.show_page(ReportAll.__name__)).pack(side="top", fill="x")
+        self.rep_notif = tk.Label(reports_frame, text="", fg="#dd0000", font=FONTS["s"])
+        self.rep_notif.pack(side="top", fill="x", pady=5, padx=10)
 
+        self.full_rep = tk.Button(reports_frame, text="Full report", font=FONTS["m"],
+                  command=lambda: controller.show_page(ReportAll.__name__))
+        self.full_rep.pack(side="top", fill="x", pady=10)
+
+        self.interest_rep = tk.Button(reports_frame, text="Interest Report", font=FONTS["m"],
+                  command=lambda: controller.show_page(ReportInterest.__name__))
+        self.interest_rep.pack(side="top", fill="x", pady=10)
+
+        self.balance_rep = tk.Button(reports_frame, text="Balance Report", font=FONTS["m"],
+                  command=lambda: controller.show_page(ReportBalance.__name__))
+        self.balance_rep.pack(side="top", fill="x", pady=10)
+
+        self.overdraft_rep = tk.Button(reports_frame, text="Overdraft Report", font=FONTS["m"],
+                  command=lambda: controller.show_page(ReportOverdraft.__name__))
+        self.overdraft_rep.pack(side="top", fill="x", pady=10)
+
+    def page_update(self):
+        """Runs when the page is shown"""
+        # Disable reports buttons if admin doesn't haven full rights
+        if SYSTEM.admin.has_full_rights():
+            self.full_rep.configure(state="normal")
+            self.interest_rep.configure(state="normal")
+            self.overdraft_rep.configure(state="normal")
+            self.balance_rep.configure(state="normal")
+            self.rep_notif.configure(text="")
+        else:
+            self.full_rep.configure(state="disabled")
+            self.interest_rep.configure(state="disabled")
+            self.overdraft_rep.configure(state="disabled")
+            self.balance_rep.configure(state="disabled")
+            self.rep_notif.configure(text="Only avilable for full admins.")
 class CustomerSearch(PageBase):
     """Search function for customers"""
 
@@ -355,7 +386,8 @@ class CustomerSearch(PageBase):
         row += 1
         # Get all customers
         tk.Button(query_frame, text="View All", font=FONTS["m"], bg="#00aa00",
-                  command=lambda: self.fetch_results(get_all=True)).grid(row=row, column=0, columnspan=2, sticky="nsew", pady=20, padx=20)
+                  command=lambda: self.fetch_results(get_all=True)).grid(row=row, column=0, columnspan=2, sticky="nsew",
+                                                                         pady=20, padx=20)
 
     def fetch_results(self, get_all=False):
         """Fetch and show all the results"""
@@ -836,11 +868,16 @@ class CustomerView(PageBase):
         header = tk.Frame(self)
         header.pack(side="top", pady=15)
 
-        tk.Label(header, text="Customer Information", font=FONTS["l"]).grid(row=0, column=0, sticky="nsew")
+        tk.Label(header, text="Customer Information", font=FONTS["l"]).grid(row=0, column=0,
+                                                                            columnspan=2, sticky="nsew")
 
         # Update button
         tk.Button(header, text="Update Customer", font=FONTS["m"],
                   command=self.update_customer).grid(row=1, column=0, sticky="nsew")
+
+        tk.Button(header, text="Open new Account", font=FONTS["m"],
+                  command=self.open_account).grid(row=1, column=1, sticky="nsew")
+
 
         # Warning text
         self.fail_text = tk.Label(self, text="", font=FONTS["m"], fg="#dd0000")
@@ -876,10 +913,21 @@ class CustomerView(PageBase):
         accounts_frame = tk.LabelFrame(data_frame, text="Accounts", font=FONTS["s"])
         accounts_frame.grid(row=6, column=0, columnspan=3, sticky="nsew")
 
-        scrollframe = ScrollableFrame(accounts_frame)
-        scrollframe.grid(row=7, column=0, columnspan=4, sticky="nsew")
+        scroll_frame = ScrollableFrame(accounts_frame)
+        scroll_frame.grid(row=7, column=0, columnspan=4, sticky="nsew")
 
-        self.accounts_parent = scrollframe.widget_frame
+        self.accounts_parent = scroll_frame.widget_frame
+
+    def open_account(self):
+        """Take the user to the account create page and pre fil the data"""
+        if self.current_customer is None:
+            tkmb.showerror("Error.", "No customer is selected.")
+        else:
+            page = self.controller.Pages[AccountCreate.__name__]
+            page.set_cust_id(self.current_customer.customer_id)
+
+            self.controller.show_page(AccountCreate.__name__)
+
 
     def load_customer_info(self, customer_id: int):
         """Load the customer information onto the page"""
@@ -960,6 +1008,7 @@ class CustomerView(PageBase):
 
 class AccountSearch(PageBase):
     """Search page for navigating accounts"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -1176,6 +1225,7 @@ class AccountSearch(PageBase):
                     kwargs[param_name] = inp
                 except:
                     print(f"Could not convert '{inp}' to '{str(type)}'")
+
         if get_all:
             accounts, reply = SYSTEM.search_accounts(get_all=True)
         else:
@@ -1248,7 +1298,7 @@ class AccountSearch(PageBase):
                          font=FONTS["m"]).grid(row=row, column=2, sticky="w", padx=5)
 
                 # Account Balance
-                tk.Label(self.results_frame, text=f"£{account.balance/100}",
+                tk.Label(self.results_frame, text=f"£{account.balance / 100}",
                          font=FONTS["m"]).grid(row=row, column=3, sticky="w", padx=5)
 
                 # Show account button
@@ -1276,6 +1326,8 @@ class AccountCreate(PageBase):
         super().__init__(parent, controller)
 
         create_navigation_bar(self, controller)
+
+        self.clear_cust_id = True
 
         # Title
         tk.Label(self, text="New Account", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
@@ -1349,6 +1401,13 @@ class AccountCreate(PageBase):
         # Submit
         tk.Button(input_frame, text="Submit", font=FONTS["m"], bg="#00dd00",
                   command=self.submit).grid(row=row, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
+
+    def set_cust_id(self, cid):
+        """Clear and replace the customer id"""
+        self.cust_id_ent.delete(0, "end")
+        self.cust_id_ent.insert(0, str(cid))
+
+        self.clear_cust_id = False
 
     def generate_new_acc_num(self):
         """Gets a new account number and shows that instead"""
@@ -1462,6 +1521,16 @@ class AccountCreate(PageBase):
         """Runs on page show"""
         # Generate a new account number so that we aren't accidentally stuck on an old one
         self.generate_new_acc_num()
+
+        self.acc_name_ent.delete(0, "end")
+        self.interest_ent.delete(0, "end")
+        self.overdraft_ent.delete(0, "end")
+
+        # Clear the customer id if the flag is set too, else reset it
+        if self.clear_cust_id:
+            self.cust_id_ent.delete(0, "end")
+        else:
+            self.clear_cust_id = True
 
 
 class AccountUpdate(PageBase):
@@ -1659,13 +1728,13 @@ class AccountUpdate(PageBase):
         else:
             self.account_id_lbl.configure(text=str(self.current_account.account_id))
             self.account_num_lbl.configure(text=str(self.current_account.account_num))
-            self.balance_lbl.configure(text=f"£{self.current_account.balance/100}")
+            self.balance_lbl.configure(text=f"£{self.current_account.balance / 100}")
 
             self.account_name_ent.delete(0, "end")
             self.account_name_ent.insert(0, self.current_account.account_name)
 
             self.overdraft_ent.delete(0, "end")
-            self.overdraft_ent.insert(0, str(self.current_account.overdraft_limit/100))
+            self.overdraft_ent.insert(0, str(self.current_account.overdraft_limit / 100))
 
             self.interest_ent.delete(0, "end")
             self.interest_ent.insert(0, str(self.current_account.interest_rate))
@@ -1826,6 +1895,7 @@ class AccountView(PageBase):
 
 class AccountTransfer(PageBase):
     """Transfer money between accounts page"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -1891,7 +1961,7 @@ class AccountTransfer(PageBase):
         self.amount_ent.grid(row=1, column=1, sticky="nsew", pady=30)
 
         # Submit
-        tk.Button(input_frame, text="Transfer", font=FONTS["m"],
+        tk.Button(input_frame, text="Transfer", font=FONTS["m"], bg="#00dd00",
                   command=self.submit).grid(row=2, column=0, columnspan=2, sticky="nsew")
 
     def submit(self):
@@ -1921,7 +1991,7 @@ class AccountTransfer(PageBase):
 
         if check_int(amount, type=float):
             amount = float(amount)
-            amount *= 100 # Convert from £s input to pence for storage
+            amount *= 100  # Convert from £s input to pence for storage
             amount = int(amount)
         else:
             self.fail_text.configure(text="All inputs must be a numbers.")
@@ -1967,8 +2037,8 @@ class AccountTransfer(PageBase):
         else:
             account = accounts[0]
             self.from_name_lbl.configure(text=account.account_name + "\n" +
-                                         account.customer.first_name + " " + account.customer.last_name + "\n" +
-                                         "£" + str(account.balance / 100))
+                                              account.customer.first_name + " " + account.customer.last_name + "\n" +
+                                              "£" + str(account.balance / 100))
 
     def on_to_num_press(self, event):
         """Bound to on key down function of to acc id entry"""
@@ -1993,7 +2063,7 @@ class AccountTransfer(PageBase):
         else:
             account = accounts[0]
             self.to_name_lbl.configure(text=account.account_name + "\n" +
-                                       account.customer.first_name + " " + account.customer.last_name)
+                                            account.customer.first_name + " " + account.customer.last_name)
 
     def page_update(self):
         """Runs on page update"""
@@ -2014,6 +2084,7 @@ class AccountTransfer(PageBase):
 
 class AccountDepositWithdraw(PageBase):
     """Deposit and withdraw page"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -2230,7 +2301,6 @@ class AdminView(PageBase):
         data_frame = tk.Frame(self)
         data_frame.pack(side="top", pady=10)
 
-
         row = 0
 
         # Name
@@ -2288,7 +2358,7 @@ class AdminView(PageBase):
         tk.Button(self, text="Log out", font=FONTS["m"], bg="#dd0000", width=10,
                   command=self.logout).pack(side="bottom", pady=20)
 
-    def load_data (self):
+    def load_data(self):
         """Loads the data onto the page"""
 
         if SYSTEM.logged_in:
@@ -2324,6 +2394,7 @@ class AdminView(PageBase):
 
 class AdminUpdate(PageBase):
     """Page for updating an admins information"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -2528,6 +2599,7 @@ class AdminUpdate(PageBase):
 
 class AdminPasswordChange(PageBase):
     """Page for admins to change their password"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -2595,6 +2667,7 @@ class AdminPasswordChange(PageBase):
 
 class ReportAll(PageBase):
     """A page that shows all the reports"""
+
     def __init__(self, parent, controller):
         super().__init__(parent, controller)
 
@@ -2613,7 +2686,7 @@ class ReportAll(PageBase):
 
         # Interest
         tk.Label(interest_frame, text="Interest Report", font=FONTS["l"]).grid(row=row, column=0,
-                                                                           columnspan=3, sticky="nsew")
+                                                                               columnspan=3, sticky="nsew")
 
         row += 1
 
@@ -2625,7 +2698,8 @@ class ReportAll(PageBase):
         row += 1
 
         #   Total
-        tk.Label(interest_frame, text="Total Interest (1 year): ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        tk.Label(interest_frame, text="Total Interest (1 year): ", font=FONTS["m"]).grid(row=row, column=0,
+                                                                                         sticky="nse")
         self.interest_total = tk.Label(interest_frame, text="", font=FONTS["m"])
         self.interest_total.grid(row=row, column=1, sticky="nsw")
 
@@ -2658,7 +2732,6 @@ class ReportAll(PageBase):
 
         # Separate
         ttk.Separator(data_frame, orient="vertical").grid(row=0, column=1, sticky="nsew", padx=5)
-
 
         # Balance
         balance_frame = tk.Frame(data_frame)
@@ -2790,7 +2863,7 @@ class ReportAll(PageBase):
         data = SYSTEM.interest_report()
 
         self.interest_accounts.configure(text=str(data["accounts_pop"]))
-        self.interest_total.configure(text=str(round(data["interest_gained"] / 100, 2)))
+        self.interest_total.configure(text= "£" + str(round(data["interest_gained"] / 100, 2)))
         self.interest_mean.configure(text=str(round(data["mean"], 2)))
 
         self.interest_highest.configure(text=str(data["highest"].interest_rate) + "%")
@@ -2846,6 +2919,242 @@ class ReportAll(PageBase):
         self.load_customers()
 
 
+class ReportInterest(PageBase):
+    """Interest only report"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        # Title
+        tk.Label(self, text="Interest Report", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+
+        interest_frame = tk.Frame(self)
+        interest_frame.pack(side="top")
+
+        row = 0
+
+        #   Accounts
+        tk.Label(interest_frame, text="Accounts: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.interest_accounts = tk.Label(interest_frame, text="", font=FONTS["m"])
+        self.interest_accounts.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Total
+        tk.Label(interest_frame, text="Total Interest (1 year): ", font=FONTS["m"]).grid(row=row, column=0,
+                                                                                         sticky="nse")
+        self.interest_total = tk.Label(interest_frame, text="", font=FONTS["m"])
+        self.interest_total.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Mean
+        tk.Label(interest_frame, text="Mean interest rate: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.interest_mean = tk.Label(interest_frame, text="", font=FONTS["m"])
+        self.interest_mean.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Highest
+        tk.Label(interest_frame, text="Highest interest: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.interest_highest = tk.Label(interest_frame, text="", font=FONTS["m"])
+        self.interest_highest.grid(row=row, column=1, sticky="nsw")
+
+        self.interest_high_button = tk.Button(interest_frame, text="View Account", font=FONTS["m"])
+        self.interest_high_button.grid(row=row, column=2, sticky="nsew")
+
+        row += 1
+
+        #   Lowest
+        tk.Label(interest_frame, text="Lowest interest: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.interest_lowest = tk.Label(interest_frame, text="", font=FONTS["m"])
+        self.interest_lowest.grid(row=row, column=1, sticky="nsw")
+
+        self.interest_low_button = tk.Button(interest_frame, text="View Account", font=FONTS["m"])
+        self.interest_low_button.grid(row=row, column=2, sticky="nsew")
+
+    def load_interest(self):
+        """Get interest report, then populate data fields"""
+        data = SYSTEM.interest_report()
+
+        self.interest_accounts.configure(text=str(data["accounts_pop"]))
+        self.interest_total.configure(text="£" + str(round(data["interest_gained"] / 100, 2)))
+        self.interest_mean.configure(text=str(round(data["mean"], 2)))
+
+        self.interest_highest.configure(text=str(data["highest"].interest_rate) + "%")
+        self.interest_high_button.configure(command=lambda hid=data["highest"].account_id: self.show_account(hid))
+
+        self.interest_lowest.configure(text=str(data["lowest"].interest_rate) + "%")
+        self.interest_low_button.configure(command=lambda lid=data["lowest"].account_id: self.show_account(lid))
+
+    def show_account(self, accid):
+        """Shows the account page with the given user loaded"""
+        self.controller.Pages[AccountView.__name__].load_account_info(accid)
+        self.controller.show_page(AccountView.__name__)
+
+    def page_update(self):
+        """runs when the page is shown"""
+        self.load_interest()
+
+
+class ReportOverdraft(PageBase):
+    """Overdraft only report"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        # title
+        tk.Label(self, text="Overdraft Report", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+
+        # Overdraft
+        overdraft_frame = tk.Frame(self)
+        overdraft_frame.pack(side="top")
+
+        row = 0
+
+        #   Accounts
+        tk.Label(overdraft_frame, text="Accounts: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.overdraft_accounts = tk.Label(overdraft_frame, text="", font=FONTS["m"])
+        self.overdraft_accounts.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Total
+        tk.Label(overdraft_frame, text="Total Overdrafts: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.overdraft_total = tk.Label(overdraft_frame, text="", font=FONTS["m"])
+        self.overdraft_total.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Mean
+        tk.Label(overdraft_frame, text="Mean overdrafts: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.overdraft_mean = tk.Label(overdraft_frame, text="", font=FONTS["m"])
+        self.overdraft_mean.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Highest
+        tk.Label(overdraft_frame, text="Highest overdraft: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.overdraft_highest = tk.Label(overdraft_frame, text="", font=FONTS["m"])
+        self.overdraft_highest.grid(row=row, column=1, sticky="nsw")
+
+        self.overdraft_high_button = tk.Button(overdraft_frame, text="View Account", font=FONTS["m"])
+        self.overdraft_high_button.grid(row=row, column=2, sticky="nsew")
+
+        row += 1
+
+        #   Lowest
+        tk.Label(overdraft_frame, text="Lowest overdraft: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.overdraft_lowest = tk.Label(overdraft_frame, text="", font=FONTS["m"])
+        self.overdraft_lowest.grid(row=row, column=1, sticky="nsw")
+
+        self.overdraft_low_button = tk.Button(overdraft_frame, text="View Account", font=FONTS["m"])
+        self.overdraft_low_button.grid(row=row, column=2, sticky="nsew")
+
+    def load_overdraft(self):
+        """Load the overdraft data in"""
+        data = SYSTEM.overdraft_report()
+
+        self.overdraft_accounts.configure(text=str(data["accounts_pop"]))
+        self.overdraft_total.configure(text="£" + str(round(data["total"] / 100, 2)))
+        self.overdraft_mean.configure(text="£" + str(round(data["mean"] / 100, 2)))
+
+        self.overdraft_highest.configure(text="£" + str(data["highest"].overdraft_limit / 100))
+        self.overdraft_high_button.configure(command=lambda hid=data["highest"].account_id: self.show_account(hid))
+
+        self.overdraft_lowest.configure(text="£" + str(data["lowest"].overdraft_limit / 100))
+        self.overdraft_low_button.configure(command=lambda lid=data["lowest"].account_id: self.show_account(lid))
+
+    def show_account(self, accid):
+        """Shows the account page with the given user loaded"""
+        self.controller.Pages[AccountView.__name__].load_account_info(accid)
+        self.controller.show_page(AccountView.__name__)
+
+    def page_update(self):
+        """runs when the page is shown"""
+        self.load_overdraft()
+
+
+class ReportBalance(PageBase):
+    """Balance only report"""
+
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        # title
+        tk.Label(self, text="Balance Report", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+
+        # Balance
+        balance_frame = tk.Frame(self)
+        balance_frame.pack(side="top")
+
+        row = 0
+
+        #   Accounts
+        tk.Label(balance_frame, text="Accounts: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.balance_accounts = tk.Label(balance_frame, text="", font=FONTS["m"])
+        self.balance_accounts.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Total
+        tk.Label(balance_frame, text="Total balances: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.balance_total = tk.Label(balance_frame, text="", font=FONTS["m"])
+        self.balance_total.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Mean
+        tk.Label(balance_frame, text="Mean balance: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.balance_mean = tk.Label(balance_frame, text="", font=FONTS["m"])
+        self.balance_mean.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Highest
+        tk.Label(balance_frame, text="Highest balance: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.balance_highest = tk.Label(balance_frame, text="", font=FONTS["m"])
+        self.balance_highest.grid(row=row, column=1, sticky="nsw")
+
+        self.balance_high_button = tk.Button(balance_frame, text="View Account", font=FONTS["m"])
+        self.balance_high_button.grid(row=row, column=2, sticky="nsew")
+
+        row += 1
+
+        #   Lowest
+        tk.Label(balance_frame, text="Lowest balance: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.balance_lowest = tk.Label(balance_frame, text="", font=FONTS["m"])
+        self.balance_lowest.grid(row=row, column=1, sticky="nsw")
+
+        self.balance_low_button = tk.Button(balance_frame, text="View Account", font=FONTS["m"])
+        self.balance_low_button.grid(row=row, column=2, sticky="nsew")
+
+    def load_balance(self):
+        """Get interest report, then populate data fields"""
+        data = SYSTEM.balance_report()
+
+        self.balance_accounts.configure(text=str(data["accounts_pop"]))
+        self.balance_total.configure(text="£" + str(round(data["total"] / 100, 2)))
+        self.balance_mean.configure(text="£" + str(round(data["mean"] / 100, 2)))
+
+        self.balance_highest.configure(text="£" + str(data["highest"].balance / 100))
+        self.balance_high_button.configure(command=lambda hid=data["highest"].account_id: self.show_account(hid))
+
+        self.balance_lowest.configure(text="£" + str(data["lowest"].balance / 100))
+        self.balance_low_button.configure(command=lambda lid=data["lowest"].account_id: self.show_account(lid))
+
+    def show_account(self, accid):
+        """Shows the account page with the given user loaded"""
+        self.controller.Pages[AccountView.__name__].load_account_info(accid)
+        self.controller.show_page(AccountView.__name__)
+
+    def page_update(self):
+        """runs when the page is updated"""
+        self.load_balance()
 
 
 # TODO: If time permits, add all the customers accounts as a pre-fill options in the transfer page

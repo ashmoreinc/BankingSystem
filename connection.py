@@ -3,8 +3,11 @@ from accounts import Customer, BankAccount, Admin
 
 
 class Connection:
-    def __init__(self, db_filepath="Files/Data/data.db"):
+    def __init__(self, db_filepath="Files/Data/data.db", mode="normal"):
         self.connected = False
+
+        # To limit functions to setup mode
+        self.mode = mode
 
         try:
             self.conn = sqlite3.connect(db_filepath)
@@ -35,6 +38,14 @@ class Connection:
         except Exception as e:
             print(str(e))
             return False, "An error occurred when querying the database."
+
+    def query(self, query: str):
+        """Runs the __query but helps for setup"""
+
+        if self.mode == "setup":
+            return self.__query(query)
+        else:
+            print("Can only run query() in setup mode.")
 
     # Getters
 
@@ -210,7 +221,8 @@ class Connection:
                         custs, reply = self.get_customers(cid=res["customer_id"])
                         if len(custs) != 1:
                             # No customer connected to this account so dont add to the list
-                            print(f'Found account id:{res["id"]}, though it is connected to {len(custs)} customers.')
+                            # print(f'Found account id:{res["id"]}, though it is connected to {len(custs)} customers.')
+                            pass
                         else:
                             acc = BankAccount(res["id"], res["account_name"], res["balance"],
                                               res["interest_rate"], res["overdraft_limit"],
@@ -412,8 +424,6 @@ class Connection:
 
             sql += f" WHERE id={cid}"
 
-            print(sql)
-
             stat, repl = self.__query(sql)
             if stat:
                 self.conn.commit()
@@ -588,13 +598,5 @@ class Connection:
 
 
 if __name__ == "__main__":
-    # Testing customer lookup and account retrieval
-    print("Testing data retrieval.")
-    c = Connection()
-
-    customers = c.get_customers(fname="Cain", must_include_all=True)[0]
-    for cust in customers:
-        print(cust.get_first_name(), cust.get_last_name())
-        accounts = c.get_accounts(cust_id=cust.get_customer_id())[0]
-        for account in accounts:
-            print("\t" + account.account_name + ": £" + str(account.balance/100))
+    print("Module Only use")
+    exit()
