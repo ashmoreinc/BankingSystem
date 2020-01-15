@@ -3157,12 +3157,6 @@ class ReportBalance(PageBase):
         self.load_balance()
 
 
-# TODO: If time permits, add all the customers accounts as a pre-fill options in the transfer page
-
-# TODO: Alter the rights restrictions on certain functions, cross reference this with moodle docs
-# TODO: GUI tweaks.
-
-
 if __name__ == "__main__":
     win = Window()
     win.mainloop()
