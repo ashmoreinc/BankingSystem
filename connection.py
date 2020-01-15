@@ -458,6 +458,73 @@ class Connection:
             else:
                 return status, reply, None
 
+    def update_admin(self, adid, first_name: str = None, last_name: str = None, username: str = None,
+                     addr_l1: str = None, addr_l2: str = None, addr_l3: str = None,
+                     addr_city: str = None, addr_post: str = None,
+                     full_rights: int = None, password_hash: str = None) -> tuple:
+        """Update the admin account details"""
+        if first_name is None and last_name is None and username is None and addr_l1 is None and addr_l2 is None \
+                and addr_l3 is None and addr_city is None and addr_post is None and \
+                full_rights is None and password_hash is None:
+            return False, "No data has been provided.", None
+        else:
+            sql = "UPDATE admins SET "
+
+            if first_name is not None:
+                sql += f"first_name='{first_name}', "
+
+            if last_name is not None:
+                sql += f"last_name='{last_name}', "
+
+            if username is not None:
+                sql += f"username='{username}', "
+
+            if addr_l1 is not None:
+                sql += f"address_line1='{addr_l1}', "
+
+            if addr_l2 is not None:
+                sql += f"address_line2='{addr_l2}', "
+
+            if addr_l3 is not None:
+                sql += f"address_line3='{addr_l3}', "
+
+            if addr_post is not None:
+                sql += f"address_postcode='{addr_post}', "
+
+            if addr_city is not None:
+                sql += f"address_city='{addr_city}', "
+
+            if full_rights is not None:
+                sql += f"full_rights={full_rights}, "
+
+            if password_hash is not None:
+                sql += f"password_hash='{password_hash}', "
+
+            sql = sql[:-2]
+            sql += f" WHERE id={adid}"
+
+            status, reply = self.__query(sql)
+
+            if status:
+                self.conn.commit()
+                # Get the new admin object
+                admins, reply = self.get_admin(adid)
+                admin = admins[0]
+
+                return True, "Successfully Updated", admin
+            else:
+                return status, reply, None
+
+    def update_admin_password(self, adid: int, new_hash: str) -> bool:
+        """Updates the accounts hash with the new one provided"""
+        sql = f"UPDATE admins SET password_hash='{new_hash}' WHERE id={adid}"
+
+        stat, repl = self.__query(sql)
+
+        if stat:
+            self.conn.commit()
+
+        return stat, repl
 
     # Create new table entries
     def create_customer(self, fname: str, lname: str, addr: list) -> tuple:

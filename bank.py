@@ -125,9 +125,8 @@ class BankingSystem:
 
     # Account and customer control
     @require_login
-    def create_new_account(self, account_name: str, interest_rate: float,
-                           overdraft_limit: int, customer_id: int):
-        """Create a new account and generate a new, unused account number"""
+    def generate_new_account_number(self) -> int:
+        """Generates a randomised account number until a unique one has be found"""
         account_num = None
         unique_num_found = False
         while not unique_num_found:
@@ -135,9 +134,18 @@ class BankingSystem:
             account_num = randint(1000000000000000, 9999999999999999)
 
             # Check if number is used
-            accs = self.connection.get_accounts(account_number=account_num)
+            accs, reply = self.connection.get_accounts(account_number=account_num)
             if len(accs) == 0:
                 unique_num_found = True
+
+        return account_num
+
+    @require_login
+    def create_new_account(self, account_name: str, interest_rate: float,
+                           overdraft_limit: int, customer_id: int, account_num: int = None):
+        """Create a new account and generate a new, unused account number"""
+        if account_num is None:
+            account_num = self.generate_new_account_number()
 
         return self.connection.create_account(account_name, account_num, interest_rate, overdraft_limit, customer_id)
 
@@ -157,6 +165,25 @@ class BankingSystem:
         return self.connection.update_customer(cid, **kwargs)
 
     @require_login
+    def update_admin(self, adid, **kwargs):
+        """Update the admin account"""
+        return self.connection.update_admin(adid, **kwargs)
+
+    @require_login
+    def update_admin_password(self, old, new, new_conf):
+        """Validates passwords then stores them"""
+
+        if new != new_conf:
+            return False, "New passwords dont match."
+
+        if not self.verify_hash(self.admin.password, old):
+            return False, "Invalid password provided."
+
+        new_hash = self.hash_password(new)
+
+        return self.connection.update_admin_password(self.admin.admin_id, new_hash)
+
+    @require_login
     def delete_account(self, accid):
         """Delete an account from the system with the given id."""
         return self.connection.delete_account(accid)
@@ -164,19 +191,29 @@ class BankingSystem:
     @require_login
     def delete_customer(self, cid):
         """remove the customer entry from the database via the connection handler"""
+
+        # Cascade, delete all the accounts connected to the
+        data = self.get_customer_data(customer_id=cid)
+
+        accounts = data["accounts"]
+
+        for account in accounts:
+            self.delete_account(account.account_id)
+
+        # Now delete the customer
         return self.connection.delete_customer(cid)
 
     @require_login
     def withdraw(self, acc_id: int, amount: int):
         """Withdraw money from an account"""
 
-        balance = self.connection.get_balance(account_id=acc_id)
-        overdraft = self.connection.get_overdraft(account_id=acc_id)
+        balance, reply = self.connection.get_balance(account_id=acc_id)
+        overdraft, reply = self.connection.get_overdraft(account_id=acc_id)
 
         new_bal = balance - amount
 
         if new_bal < 0 - overdraft:
-            return False
+            return False, "Insufficient funds available"
         else:
             return self.connection.change_balance(new_bal, account_id=acc_id)
 
@@ -184,11 +221,36 @@ class BankingSystem:
     def deposit(self, acc_id: int, amount: int):
         """Add money to the account"""
 
-        balance = self.connection.get_balance(account_id=acc_id)
+        balance, reply = self.connection.get_balance(account_id=acc_id)
 
         new_bal = balance + amount
 
         return self.connection.change_balance(new_bal, account_id=acc_id)
+
+    @require_login
+    def transfer(self, from_acc_num: int, to_acc_num: int, amount: int) -> tuple:
+        """Transfer money from one account to another"""
+        # Get the account for the from account
+        accounts, reply = self.search_accounts(account_number=from_acc_num)
+
+        if len(accounts) > 0:
+            from_acc = accounts[0]
+        else:
+            return False, "Could not find from account"
+
+        # Get the account for the to account
+        accounts, reply = self.search_accounts(account_number=to_acc_num)
+
+        if len(accounts) > 0:
+            to_acc = accounts[0]
+        else:
+            return False, "Could not find to account"
+        stat, reason = self.withdraw(from_acc.account_id, amount)
+        if stat:
+            self.deposit(to_acc.account_id, amount)
+            return True, ""
+        else:
+            return False, f"Could not remove the money from the sender. Reason: {reason}"
 
     @require_login
     def get_customer_data(self, customer_id: int) -> dict:
@@ -303,9 +365,112 @@ class BankingSystem:
 
         return accounts_return, reply
 
+    # Reports
+    @require_login
+    def interest_report(self) -> dict:
+        """Check the interest of all accounts"""
+        accounts, reply = self.search_accounts(get_all=True)
+
+        highest_interest = accounts[0]
+        lowest_interest = accounts[0]
+
+        cumulative_interest = 0.0
+
+        interest_gained = 0.0
+
+        for account in accounts:
+            # Check if highest interest
+            if account.interest_rate > highest_interest.interest_rate:
+                highest_interest = account
+
+            # Check lowest
+            if account.interest_rate < lowest_interest.interest_rate:
+                lowest_interest = account
+
+            cumulative_interest += account.interest_rate
+
+            interest_earned = account.calculate_interest_for_year()
+
+            interest_gained += interest_earned
+
+        mean_interest = cumulative_interest / len(accounts)
+
+        data = {"highest": highest_interest,
+                "lowest": lowest_interest,
+                "mean": mean_interest,
+                "interest_gained": interest_gained,
+                "accounts_pop": len(accounts)}
+
+        return data
+
+    @require_login
+    def overdraft_report(self) -> dict:
+        """Calculate the amount of overdrafts given"""
+        accounts, reply = self.search_accounts(get_all=True)
+
+        overdraft_total = 0
+
+        overdraft_highest = accounts[0]
+        overdraft_lowest = accounts[0]
+
+        for account in accounts:
+            # Check highest
+            if account.overdraft_limit > overdraft_highest.overdraft_limit:
+                overdraft_highest = account
+
+            # Check lowest
+            if account.overdraft_limit < overdraft_lowest.overdraft_limit:
+                overdraft_lowest = account
+
+            overdraft_total += account.overdraft_limit
+
+        overdraft_mean = overdraft_total / len(accounts)
+
+        data = {"highest": overdraft_highest,
+                "lowest": overdraft_lowest,
+                "mean": overdraft_mean,
+                "total": overdraft_total,
+                "accounts_pop": len(accounts)}
+
+        return data
+
+    @require_login
+    def balance_report(self) -> dict:
+        """Balance report across all accounts"""
+        accounts, reply = self.search_accounts(get_all=True)
+
+        max_balance = accounts[0]
+        min_balance = accounts[0]
+
+        total_balance = 0.0
+
+        for account in accounts:
+            # Highest account balance
+            if account.balance > max_balance.balance:
+                max_balance = account
+
+            # lowest account balance
+            if account.balance < min_balance.balance:
+                min_balance = account
+
+            total_balance += account.balance
+
+        mean_balance = total_balance / len(accounts)
+
+        data = {"highest": max_balance,
+                "lowest": min_balance,
+                "mean": mean_balance,
+                "total": total_balance,
+                "accounts_pop": len(accounts)}
+
+        return data
+
+    @require_login
+    def customer_report(self) -> dict:
+        """Creates a report on customers"""
+        customers, reply = self.search_customers(get_all=True)
+
+        return {"customers_pop": len(customers)}
 
 if __name__ == "__main__":
-    sys = BankingSystem()
-    # Test log in
-    # Test full rights account
-    sys.login('ashmoreinc', 'hunter2')
+    print("Module Only use")

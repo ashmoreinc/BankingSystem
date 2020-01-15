@@ -85,6 +85,13 @@ class BankAccount:
         """Returns the account number"""
         return self.account_num
 
+    def calculate_interest_for_year(self):
+        """Calculates interest for 1 year"""
+        interest = self.balance * (self.interest_rate / 100)
+        print(self.balance)
+        print(interest)
+        return interest
+
 
 class Admin(User):
     """Administrator account and controls"""

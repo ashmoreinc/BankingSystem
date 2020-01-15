@@ -215,8 +215,17 @@ class LandingPage(PageBase):
                   command=lambda: controller.show_page(AccountSearch.__name__)).grid(row=1, column=0, sticky="w")
 
         tk.Button(account_manage, text="Create", font=FONTS["m"],
-                  command=lambda: controller.show_page(AccountCreate.__name__)).grid(row=2, column=0, sticky="w")
+                  command=lambda: controller.show_page(AccountCreate.__name__)).grid(row=1, column=1, sticky="w")
 
+        tk.Button(account_manage, text="Money Transfer", font=FONTS["m"],
+                  command=lambda: controller.show_page(AccountTransfer.__name__)).grid(row=1, column=2, sticky="w")
+
+        tk.Button(account_manage, text="Deposit/Withdraw", font=FONTS["m"],
+                  command=lambda: controller.show_page(AccountDepositWithdraw.__name__)).grid(row=1, column=3,
+                                                                                              sticky="w")
+        # Reports section
+        tk.Button(reports_frame, text="Full report", font=FONTS["m"],
+                  command=lambda: controller.show_page(ReportAll.__name__)).pack(side="top", fill="x")
 
 class CustomerSearch(PageBase):
     """Search function for customers"""
@@ -831,7 +840,7 @@ class CustomerView(PageBase):
 
         # Update button
         tk.Button(header, text="Update Customer", font=FONTS["m"],
-                  command=self.update_customer).grid(row=0, column=1, sticky="nsew")
+                  command=self.update_customer).grid(row=1, column=0, sticky="nsew")
 
         # Warning text
         self.fail_text = tk.Label(self, text="", font=FONTS["m"], fg="#dd0000")
@@ -1146,14 +1155,14 @@ class AccountSearch(PageBase):
         row += 1
         # search button
         tk.Button(query_frame, text="Search", font=FONTS["m"], bg="#00dd00",
-                  command=self.fetch_results).grid(row=row, column=0, columnspan=2, sticky="nsew", pady=10)
+                  command=self.fetch_results).grid(row=row, column=0, columnspan=2, sticky="nsew", pady=2)
 
         row += 1
 
         # View all
         tk.Button(query_frame, text="View All", font=FONTS["m"], bg="#00dd00",
                   command=lambda: self.fetch_results(get_all=True)).grid(row=row, column=0, columnspan=2,
-                                                                         sticky="nsew", pady=10)
+                                                                         sticky="nsew", pady=2)
 
     def fetch_results(self, get_all=False):
         """Fetch's and displays all results"""
@@ -1271,10 +1280,6 @@ class AccountCreate(PageBase):
         # Title
         tk.Label(self, text="New Account", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
 
-        # Required fields notice
-        tk.Label(self, text="All fields with * are required.",
-                 font=FONTS["s"], fg="#dd0000").pack(side="top")
-
         # Text shown on failure
         self.fail_text = tk.Label(self, text="",
                                   font=FONTS["s"], fg="#dd0000")
@@ -1287,10 +1292,176 @@ class AccountCreate(PageBase):
         row = 0
 
         # Customer ID
-        tk.Label(input_frame, text="Customer ID *: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+        tk.Label(input_frame, text="Customer ID: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e", pady=5)
 
         self.cust_id_ent = tk.Entry(input_frame, font=FONTS["m"])
-        self.cust_id_ent.grid(row=row, column=1, sticky="nsew")
+        self.cust_id_ent.grid(row=row, column=1, sticky="nsew", pady=5)
+
+        row += 1
+
+        # Account name
+        tk.Label(input_frame, text="Account Name: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e", pady=5)
+
+        self.acc_name_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.acc_name_ent.grid(row=row, column=1, sticky="nsew", pady=5)
+
+        row += 1
+
+        # Account Number Generator
+        tk.Label(input_frame, text="Account Number: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e", pady=5)
+
+        self.account_num = None
+
+        self.acc_num_lbl = tk.Label(input_frame, text="", font=FONTS["m"])
+        self.acc_num_lbl.grid(row=row, column=1, sticky="w", pady=5)
+
+        tk.Button(input_frame, text="Generate New", font=FONTS["m"],
+                  command=self.generate_new_acc_num).grid(row=row, column=2, sticky="nsew", pady=5)
+
+        row += 1
+
+        # Interest Rate
+        tk.Label(input_frame, text="Interest Rate: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e", pady=5)
+
+        f = tk.Frame(input_frame)
+        f.grid(row=row, column=1, sticky="nsew", pady=5)
+
+        self.interest_ent = tk.Entry(f, font=FONTS["m"])
+        self.interest_ent.grid(row=0, column=0, sticky="nsew", pady=5)
+
+        tk.Label(f, text="%", font=FONTS["m"]).grid(row=0, column=1, sticky="w", pady=5)
+
+        row += 1
+
+        # Overdraft
+        tk.Label(input_frame, text="Overdraft Limit: ", font=FONTS["m"]).grid(row=row, column=0, sticky="e", pady=5)
+
+        f = tk.Frame(input_frame)
+        f.grid(row=row, column=1, sticky="nsew", pady=5)
+
+        tk.Label(f, text="£", font=FONTS["m"]).grid(row=0, column=0, sticky="e", pady=5)
+
+        self.overdraft_ent = tk.Entry(f, font=FONTS["m"])
+        self.overdraft_ent.grid(row=0, column=1, sticky="nsew", pady=5)
+
+        row += 1
+
+        # Submit
+        tk.Button(input_frame, text="Submit", font=FONTS["m"], bg="#00dd00",
+                  command=self.submit).grid(row=row, column=0, columnspan=3, padx=10, pady=10, sticky="nsew")
+
+    def generate_new_acc_num(self):
+        """Gets a new account number and shows that instead"""
+        num = SYSTEM.generate_new_account_number()
+
+        self.account_num = num
+
+        num = str(num)
+        account_string = num[0:4] + " " + num[4:8] + " " + num[8:12] + " " + num[12:]
+
+        self.acc_num_lbl.configure(text=account_string)
+
+    def submit(self):
+        """Runs when the submit button is pressed."""
+        cust_id = self.cust_id_ent.get()
+
+        acc_name = self.acc_name_ent.get()
+        acc_num = self.account_num
+
+        interest = self.interest_ent.get()
+        overdraft = self.overdraft_ent.get()
+
+        run = True
+
+        # Validity check
+        if len(cust_id) == 0:
+            self.fail_text.configure(text="All fields must be filled and properly formatted.")
+            self.cust_id_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000",
+                                       highlightthickness=2)
+
+            run = False
+        else:
+            try:
+                cust_id = int(cust_id)
+            except:
+                self.fail_text.configure(text="All fields must be filled and properly formatted.")
+                self.cust_id_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000",
+                                           highlightthickness=2)
+
+                run = False
+
+            data = SYSTEM.get_customer_data(customer_id=cust_id)
+
+            if data["customer"] is None:
+                self.fail_text.configure(text="Customer ID not connected to any accounts.")
+                self.cust_id_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000",
+                                           highlightthickness=2)
+                # Break for this one so the user definitely sees this message.
+                return
+                run = False
+
+        if len(acc_name) == 0:
+            self.fail_text.configure(text="All fields must be filled and properly formatted.")
+            self.acc_name_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000",
+                                        highlightthickness=2)
+            run = False
+        else:
+            self.acc_num_lbl.configure(highlightthickness=0)
+
+        if acc_num is None:
+            self.fail_text.configure(text="All fields must be filled.")
+            self.generate_new_acc_num()
+            run = False
+
+        if len(interest) == 0:
+            self.fail_text.configure(text="All fields must be filled and properly formatted.")
+            self.interest_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000",
+                                        highlightthickness=2)
+            run = False
+        else:
+            try:
+                interest = float(interest)
+            except:
+                self.fail_text.configure(text="All fields must be filled and properly formatted.")
+                self.interest_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000",
+                                            highlightthickness=2)
+                run = False
+
+        if len(overdraft) == 0:
+            self.fail_text.configure(text="All fields must be filled and properly formatted.")
+            self.overdraft_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000",
+                                         highlightthickness=2)
+            run = False
+        else:
+            try:
+                overdraft = int(float(overdraft) * 100)
+            except:
+                self.fail_text.configure(text="All fields must be filled and properly formatted.")
+                self.overdraft_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000",
+                                             highlightthickness=2)
+                run = False
+
+        if run:
+            self.fail_text.configure(text="")
+
+            status, reply, accid = SYSTEM.create_new_account(acc_name, interest, overdraft,
+                                                             cust_id, account_num=acc_num)
+
+            if status:
+                # Get the account
+                account = SYSTEM.get_account_data(accid)
+
+                # Go to account view page
+                self.controller.Pages[AccountView.__name__].load_account_info(accid)
+                self.controller.show_page(AccountView.__name__)
+
+            else:
+                self.fail_text.configure(text=reply)
+
+    def page_update(self):
+        """Runs on page show"""
+        # Generate a new account number so that we aren't accidentally stuck on an old one
+        self.generate_new_acc_num()
 
 
 class AccountUpdate(PageBase):
@@ -1524,13 +1695,20 @@ class AccountView(PageBase):
         header = tk.Frame(self)
         header.pack(side="top", pady=15)
 
-        tk.Label(header, text="Account Information", font=FONTS["l"]).grid(row=0, column=0, sticky="nsew")
+        tk.Label(header, text="Account Information", font=FONTS["l"]).grid(row=0, column=0, columnspan=3, sticky="nsew")
 
         # Update button
         tk.Button(header, text="Update Account", font=FONTS["m"],
-                  command=self.update_account).grid(row=0, column=1, sticky="nsew")
+                  command=self.update_account).grid(row=1, column=0, sticky="nsew", padx=25)
 
-        # TODO: Add buttons to take us too transfer, withdraw etc
+        # Transfer button
+        tk.Button(header, text="Transfer Money", font=FONTS["m"],
+                  command=self.go_to_transfer).grid(row=1, column=1, sticky="nsew")
+
+        # Deposit/withdraw button
+        tk.Button(header, text="Deposit/Withdraw", font=FONTS["m"],
+                  command=self.go_to_deposit).grid(row=1, column=2)
+
         # Warning text
         self.fail_text = tk.Label(self, text="", font=FONTS["m"], fg="#dd0000")
         self.fail_text.pack(side="top", fill="y", pady=15)
@@ -1548,6 +1726,9 @@ class AccountView(PageBase):
         tk.Label(data_frame, text="Account Number: ", font=FONTS["m"]).grid(row=1, column=0, sticky="w")
         self.account_num_label = tk.Label(data_frame, text="", font=FONTS["m"])
         self.account_num_label.grid(row=1, column=1, sticky="w")
+
+        tk.Button(data_frame, text="Copy", font=FONTS["m"],
+                  command=self.copy_acc_num).grid(row=1, column=2, sticky="nsew")
 
         # Account Balance
         tk.Label(data_frame, text="Balance: ", font=FONTS["m"]).grid(row=2, column=0, sticky="w")
@@ -1571,6 +1752,37 @@ class AccountView(PageBase):
 
         self.customer_view_btn = tk.Button(data_frame, text="View Account", font=FONTS["m"])
         self.customer_view_btn.grid(row=5, column=2, sticky="nsew")
+
+    def go_to_transfer(self):
+        """Pre-fill the transfer page with this accounts data, then navigate there."""
+        if self.current_account is None:
+            tkmb.showerror("Issue setting field.", "No customer is currently selected.")
+            return
+        else:
+            page = self.controller.Pages[AccountTransfer.__name__]
+            page.set_from_input(str(self.current_account.account_num))
+
+            self.controller.show_page(AccountTransfer.__name__)
+
+    def go_to_deposit(self):
+        """Pre-fill the deposit account number and then navigate there"""
+        if self.current_account is None:
+            tkmb.showerror("Issue setting field.", "No customer is currently selected.")
+            return
+        else:
+            page = self.controller.Pages[AccountDepositWithdraw.__name__]
+            page.fill_account_num(str(self.current_account.account_num))
+
+            self.controller.show_page(AccountDepositWithdraw.__name__)
+
+    def copy_acc_num(self):
+        """Copies the current account number to clipboard"""
+        if self.current_account is None:
+            tkmb.showerror("Copy error.", "No account currently selected.")
+        else:
+            win.clipboard_clear()
+            win.clipboard_append(self.current_account.account_num)
+            win.update()
 
     def load_account_info(self, account_id: int):
         """Load account information into the page from the account connected to the given id"""
@@ -1612,6 +1824,394 @@ class AccountView(PageBase):
             self.controller.show_page(AccountUpdate.__name__)
 
 
+class AccountTransfer(PageBase):
+    """Transfer money between accounts page"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        self.clear_from_field = True
+
+        # Title
+        tk.Label(self, text="Money Transfers", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+
+        # Text shown on failure
+        self.fail_text = tk.Label(self, text="",
+                                  font=FONTS["s"], fg="#dd0000")
+        self.fail_text.pack(side="top")
+
+        # Input parent frame
+        input_frame = tk.Frame(self)
+        input_frame.pack(side="top", fill="y", pady=30)
+
+        from_frame = tk.LabelFrame(input_frame, text=" From ", font=FONTS["m"])
+        from_frame.grid(row=0, column=0, sticky="nsew", padx=5, pady=20)
+
+        to_frame = tk.LabelFrame(input_frame, text=" To ", font=FONTS["m"])
+        to_frame.grid(row=0, column=1, sticky="nsew", padx=5, pady=20)
+
+        row = 0
+
+        # From and to accounts
+        tk.Label(from_frame, text="Account Number", font=FONTS["m"]).grid(row=row, column=0, sticky="nsew")
+
+        tk.Label(to_frame, text="Account Number", font=FONTS["m"]).grid(row=row, column=0, sticky="nsew")
+
+        row += 1
+
+        self.from_acc_num_ent = tk.Entry(from_frame, font=FONTS["m"], highlightbackground="#eeeeee",
+                                         highlightcolor="#ffffff", highlightthickness=2)
+        self.from_acc_num_ent.grid(row=row, column=0, sticky="nsew")
+
+        # Bind key press and release to the check function
+        self.from_acc_num_ent.bind("<KeyPress>", self.on_from_num_press)
+        self.from_acc_num_ent.bind("<KeyRelease>", self.on_from_num_press)
+
+        self.to_acc_num_ent = tk.Entry(to_frame, font=FONTS["m"], highlightbackground="#eeeeee",
+                                       highlightcolor="#eeeeee", highlightthickness=2)
+        self.to_acc_num_ent.grid(row=row, column=0, sticky="nsew")
+
+        # Bind key press/release to the show function
+        self.to_acc_num_ent.bind("<KeyPress>", self.on_to_num_press)
+        self.to_acc_num_ent.bind("<KeyRelease>", self.on_to_num_press)
+
+        row += 1
+
+        self.from_name_lbl = tk.Label(from_frame, text="", font=FONTS["m"])
+        self.from_name_lbl.grid(row=row, column=0, sticky="nsew")
+
+        self.to_name_lbl = tk.Label(to_frame, text="", font=FONTS["m"])
+        self.to_name_lbl.grid(row=row, column=0, sticky="nsew")
+
+        # Amount
+        tk.Label(input_frame, text="Amount to transfer: £", font=FONTS["m"]).grid(row=1, column=0, sticky="e", pady=30)
+
+        self.amount_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.amount_ent.grid(row=1, column=1, sticky="nsew", pady=30)
+
+        # Submit
+        tk.Button(input_frame, text="Transfer", font=FONTS["m"],
+                  command=self.submit).grid(row=2, column=0, columnspan=2, sticky="nsew")
+
+    def submit(self):
+        """Validates and runs the form."""
+        from_num = self.from_acc_num_ent.get()
+        to_num = self.to_acc_num_ent.get()
+        amount = self.amount_ent.get()
+
+        def check_int(inp: str, type=int):
+            try:
+                inp = type(inp)
+                return True
+            except:
+                return False
+
+        if check_int(from_num):
+            from_num = int(from_num)
+        else:
+            self.fail_text.configure(text="All inputs must be a numbers.")
+            return
+
+        if check_int(to_num):
+            to_num = int(to_num)
+        else:
+            self.fail_text.configure(text="All inputs must be a numbers.")
+            return
+
+        if check_int(amount, type=float):
+            amount = float(amount)
+            amount *= 100 # Convert from £s input to pence for storage
+            amount = int(amount)
+        else:
+            self.fail_text.configure(text="All inputs must be a numbers.")
+            return
+
+        status, reply = SYSTEM.transfer(from_num, to_num, amount)
+        if status:
+            tkmb.showinfo("Money transfer successful.", "Successfully transferred money between the two accounts.")
+        else:
+            tkmb.showerror("Money transfer failed.", f"Could not transfer money between the accounts. Reason: {reply}")
+
+    def set_from_input(self, account_num: int):
+        """Update the account input field"""
+        self.from_acc_num_ent.delete(0, "end")
+        self.from_acc_num_ent.insert(0, str(account_num))
+
+        # Change the flag so the from field is not wiped on page show
+        self.clear_from_field = False
+
+        # Manually trigger the information update event function
+        self.on_from_num_press(None)
+
+    def on_from_num_press(self, event):
+        """Bound to on key down function of from acc num entry"""
+        inp = self.from_acc_num_ent.get()
+
+        if len(inp) == 0:
+            self.from_name_lbl.configure(text="")
+            self.from_acc_num_ent.configure(highlightbackground="#eeeeee", highlightcolor="#eeeeee")
+            return
+
+        try:
+            inp = int(inp)
+            self.from_acc_num_ent.configure(highlightbackground="#eeeeee", highlightcolor="#eeeeee")
+        except:
+            self.from_acc_num_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000")
+            self.from_name_lbl.configure(text="Non integer input.")
+            return
+
+        accounts, reply = SYSTEM.search_accounts(account_number=inp)
+        if len(accounts) == 0:
+            self.from_name_lbl.configure(text="Account dont exist.")
+        else:
+            account = accounts[0]
+            self.from_name_lbl.configure(text=account.account_name + "\n" +
+                                         account.customer.first_name + " " + account.customer.last_name + "\n" +
+                                         "£" + str(account.balance / 100))
+
+    def on_to_num_press(self, event):
+        """Bound to on key down function of to acc id entry"""
+        inp = self.to_acc_num_ent.get()
+
+        if len(inp) == 0:
+            self.to_name_lbl.configure(text="")
+            self.to_acc_num_ent.configure(highlightbackground="#eeeeee", highlightcolor="#eeeeee")
+            return
+
+        try:
+            inp = int(inp)
+            self.to_acc_num_ent.configure(highlightbackground="#eeeeee", highlightcolor="#eeeeee")
+        except:
+            self.to_acc_num_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000")
+            self.to_name_lbl.configure(text="Non integer input.")
+            return
+
+        accounts, reply = SYSTEM.search_accounts(account_number=inp)
+        if len(accounts) == 0:
+            self.to_name_lbl.configure(text="Account dont exist.")
+        else:
+            account = accounts[0]
+            self.to_name_lbl.configure(text=account.account_name + "\n" +
+                                       account.customer.first_name + " " + account.customer.last_name)
+
+    def page_update(self):
+        """Runs on page update"""
+        self.to_acc_num_ent.delete(0, "end")
+        self.amount_ent.delete(0, "end")
+
+        # Clear from field or reset flag
+        if self.clear_from_field:
+            self.from_acc_num_ent.delete(0, "end")
+        else:
+            # reset the flag
+            self.clear_from_field = True
+
+        # Trigger the key events for the information, manually
+        self.on_from_num_press(None)
+        self.on_to_num_press(None)
+
+
+class AccountDepositWithdraw(PageBase):
+    """Deposit and withdraw page"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        # Flags whether or not to clear the account number
+        self.clear_acc_num = True
+
+        # Title
+        tk.Label(self, text="Deposit or withdraw", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+
+        # Text shown on failure
+        self.fail_text = tk.Label(self, text="",
+                                  font=FONTS["s"], fg="#dd0000")
+        self.fail_text.pack(side="top")
+
+        # Input parent frame
+        input_frame = tk.Frame(self)
+        input_frame.pack(side="top", fill="y", pady=30)
+
+        row = 0
+
+        # Account Number
+        tk.Label(input_frame, text="Account Number: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nsew")
+
+        self.account_num_ent = tk.Entry(input_frame, font=FONTS["m"], highlightbackground="#eeeeee",
+                                        highlightcolor="#eeeeee", highlightthickness=2)
+        self.account_num_ent.grid(row=row, column=1, sticky="nsew")
+
+        self.account_num_ent.bind("<KeyPress>", self.on_acc_num_press)
+        self.account_num_ent.bind("<KeyRelease>", self.on_acc_num_press)
+
+        row += 1
+
+        self.account_name_lbl = tk.Label(input_frame, text="", font=FONTS["m"])
+        self.account_name_lbl.grid(row=row, column=1, sticky="w")
+
+        row += 1
+
+        self.account_holder_lbl = tk.Label(input_frame, text="", font=FONTS["m"])
+        self.account_holder_lbl.grid(row=row, column=1, sticky="w")
+
+        row += 1
+
+        self.account_balance_lbl = tk.Label(input_frame, text="", font=FONTS["m"])
+        self.account_balance_lbl.grid(row=row, column=1, sticky="w")
+
+        row += 1
+
+        self.account_overdraft_lbl = tk.Label(input_frame, text="", font=FONTS["m"])
+        self.account_overdraft_lbl.grid(row=row, column=1, sticky="w")
+
+        row += 1
+
+        ttk.Separator(input_frame, orient="horizontal").grid(row=row, column=0, columnspan=2, sticky="nsew")
+
+        row += 1
+
+        # Transfer or deposit
+        self.option = tk.IntVar()
+
+        tk.Radiobutton(input_frame, variable=self.option, value=0,
+                       text="Deposit", font=FONTS["m"]).grid(row=row, column=0, sticky="w")
+
+        tk.Radiobutton(input_frame, variable=self.option, value=1,
+                       text="Withdraw", font=FONTS["m"]).grid(row=row, column=1, sticky="w")
+
+        row += 1
+
+        # Amount
+        tk.Label(input_frame, text="Amount: £", font=FONTS["m"]).grid(row=row, column=0, sticky="e")
+
+        self.amount_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.amount_ent.grid(row=row, column=1, sticky="nsew")
+
+        row += 1
+
+        # Submit button
+        tk.Button(input_frame, text="Update", font=FONTS["m"], bg="#00dd00",
+                  command=self.submit).grid(row=row, column=0, columnspan=2, sticky="nsew", pady=30, padx=5)
+
+    def on_acc_num_press(self, event):
+        """Bound to on key down function of from acc num entry"""
+        inp = self.account_num_ent.get()
+
+        if len(inp) == 0:
+            self.account_name_lbl.configure(text="")
+            self.account_holder_lbl.configure(text="")
+            self.account_balance_lbl.configure(text="")
+            self.account_overdraft_lbl.configure(text="")
+            self.account_num_ent.configure(highlightbackground="#eeeeee", highlightcolor="#eeeeee")
+            return
+
+        # Convert to int or return
+        try:
+            inp = int(inp)
+            self.account_num_ent.configure(highlightbackground="#eeeeee", highlightcolor="#eeeeee")
+        except:
+            self.account_num_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000")
+            self.account_name_lbl.configure(text="Non integer input.")
+            self.account_holder_lbl.configure(text="")
+            self.account_balance_lbl.configure(text="")
+            self.account_overdraft_lbl.configure(text="")
+            return
+
+        accounts, reply = SYSTEM.search_accounts(account_number=inp)
+        if len(accounts) == 0:
+            self.account_name_lbl.configure(text="Account dont exist.")
+            self.account_holder_lbl.configure(text="")
+            self.account_balance_lbl.configure(text="")
+            self.account_overdraft_lbl.configure(text="")
+        else:
+            account = accounts[0]
+            self.account_name_lbl.configure(text=account.account_name)
+            self.account_holder_lbl.configure(text=account.customer.first_name + account.customer.last_name)
+            self.account_balance_lbl.configure(text=f"Balance: £{account.balance / 100}")
+            self.account_overdraft_lbl.configure(text=f"Overdraft: £{account.overdraft_limit / 100}")
+
+    def fill_account_num(self, account_num):
+        """Pre fill the account number"""
+        self.account_num_ent.delete(0, "end")
+        self.account_num_ent.insert(0, str(account_num))
+
+        # Set the flag so that this information is not wiped on page show
+        self.clear_acc_num = False
+
+        # Manual trigger on key press event to update info
+        self.on_acc_num_press(None)
+
+    def submit(self):
+        """Submit the form"""
+        acc_num = self.account_num_ent.get()
+        option = self.option.get()
+        amount = self.amount_ent.get()
+
+        # Convert account number to integer
+        try:
+            acc_num = int(acc_num)
+        except:
+            self.fail_text.configure(text="Account number must be an integer.")
+            return
+
+        # Convert amount into integer of pence
+        try:
+            amount = float(amount)
+            amount *= 100
+            amount = int(amount)
+        except:
+            self.fail_text.configure(text="Amount must be a number.")
+            return
+
+        # Get account id from number
+        accounts, reply = SYSTEM.search_accounts(account_number=acc_num)
+
+        if len(accounts) == 0:
+            self.fail_text.configure(text="That account does not exist.")
+            return
+
+        account = accounts[0]
+
+        # Check chosen method and run that
+        if option == 0:
+            # Deposit
+            stat, reply = SYSTEM.deposit(account.account_id, amount)
+
+            if stat:
+                tkmb.showinfo("Deposit Successful.", "Deposit successfully completed.")
+            else:
+                tkmb.showerror("Deposit Failed", f"Deposit failed due to the following: {reply}")
+        else:
+            # Withdraw
+            stat, reply = SYSTEM.withdraw(account.account_id, amount)
+
+            if stat:
+                tkmb.showinfo("Withdraw Successful.", "Withdrawal successfully completed.")
+            else:
+                tkmb.showerror("Withdraw Failed", f"Deposit failed due to the following: {reply}")
+
+        # Manual event trigger on account num key press event to update information
+        self.on_acc_num_press(None)
+
+    def page_update(self):
+        """Runs when this page is shown"""
+        # Clear fields
+        self.amount_ent.delete(0, "end")
+
+        self.option.set(0)
+
+        # Check the flag and reset it if its off
+        if self.clear_acc_num:
+            self.account_num_ent.delete(0, "end")
+        else:
+            self.clear_acc_num = True
+
+        # Manually trigger information show event
+        self.on_acc_num_press(None)
+
+
 class AdminView(PageBase):
     """View details about the current admin account"""
 
@@ -1621,24 +2221,638 @@ class AdminView(PageBase):
         create_navigation_bar(self, controller)
 
         # title
-        tk.Label(self, text="Your account", font=FONTS["l"]).pack(side="top", fill="x", pady=20)
+        tk.Label(self, text="Your account", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+
+        # Update button
+        tk.Button(self, text="Update Account", font=FONTS["m"],
+                  command=lambda: controller.show_page(AdminUpdate.__name__)).pack(side="top", pady=5)
+
+        data_frame = tk.Frame(self)
+        data_frame.pack(side="top", pady=10)
+
+
+        row = 0
+
+        # Name
+        tk.Label(data_frame, text="Name: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+
+        self.name_lbl = tk.Label(data_frame, text="", font=FONTS["m"])
+        self.name_lbl.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        # Username
+        tk.Label(data_frame, text="Username: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+
+        self.username_lbl = tk.Label(data_frame, text="", font=FONTS["m"])
+        self.username_lbl.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        # Address:
+        tk.Label(data_frame, text="Address: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+
+        self.addr_l1 = tk.Label(data_frame, text="", font=FONTS["m"])
+        self.addr_l1.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        self.addr_l2 = tk.Label(data_frame, text="", font=FONTS["m"])
+        self.addr_l2.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        self.addr_l3 = tk.Label(data_frame, text="", font=FONTS["m"])
+        self.addr_l3.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        self.addr_city = tk.Label(data_frame, text="", font=FONTS["m"])
+        self.addr_city.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        self.addr_post = tk.Label(data_frame, text="", font=FONTS["m"])
+        self.addr_post.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+        row += 1
+
+        # Rights
+        tk.Label(data_frame, text="Full access rights: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+
+        self.rights_lbl = tk.Label(data_frame, text="", font=FONTS["m"])
+        self.rights_lbl.grid(row=row, column=1, sticky="nsw")
 
         # Log out button
         tk.Button(self, text="Log out", font=FONTS["m"], bg="#dd0000", width=10,
                   command=self.logout).pack(side="bottom", pady=20)
+
+    def load_data (self):
+        """Loads the data onto the page"""
+
+        if SYSTEM.logged_in:
+            self.name_lbl.configure(text=f"{SYSTEM.admin.first_name} {SYSTEM.admin.last_name}")
+            self.username_lbl.configure(text=f"{SYSTEM.admin.get_username()}")
+            self.addr_l1.configure(text=f"{SYSTEM.admin.get_address()[0]}")
+            self.addr_l2.configure(text=f"{SYSTEM.admin.get_address()[1]}")
+            self.addr_l3.configure(text=f"{SYSTEM.admin.get_address()[2]}")
+            self.addr_city.configure(text=f"{SYSTEM.admin.get_address()[3]}")
+            self.addr_post.configure(text=f"{SYSTEM.admin.get_address()[4]}")
+
+            if SYSTEM.admin.full_rights:
+                self.rights_lbl.configure(text="True", fg="#00dd00")
+            else:
+                self.rights_lbl.configure(text="False", fg="#dd0000")
+        else:
+            tkmb.showerror("An error has occured.", "No admin appears to be logged in. Returning to log in screen.")
+
+            # Run the log out function just to clear everything up in-case of errors.
+            SYSTEM.log_out()
+            self.controller.show_page(LoginPage.__name__)
 
     def logout(self):
         """Logs the user out and returns to the home page"""
         SYSTEM.log_out()
         self.controller.show_page(LoginPage.__name__)
 
+    def page_update(self):
+        """Runs when the page is shown"""
+        # Load the admin data
+        self.load_data()
 
-# TODO: Transfer and withdraw and deposit money.
-# TODO: Admin Account Management (view/update/delete)
-#       Include the password change function, maybe even add a 'days since last change' notifier
-# TODO: Reports
+
+class AdminUpdate(PageBase):
+    """Page for updating an admins information"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        # Title
+        tk.Label(self, text="Admin Account Update.", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+
+        # Required fields notice
+        tk.Label(self, text="All fields with * are to be filled.",
+                 font=FONTS["s"], fg="#dd0000").pack(side="top")
+
+        self.fail_text = tk.Label(self, text="", font=FONTS["m"], fg="#dd0000")
+        self.fail_text.pack(side="top", fill="x")
+
+        input_frame = tk.Frame(self)
+        input_frame.pack(side="top", pady=10)
+
+        row = 0
+
+        # Name Section
+        tk.Label(input_frame, text="First *", font=FONTS["m"]).grid(row=row, column=1, sticky="nsew")
+
+        tk.Label(input_frame, text="Last *", font=FONTS["m"]).grid(row=row, column=2, sticky="nsew")
+
+        row += 1
+
+        tk.Label(input_frame, text="Name: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse", pady=10)
+
+        self.first_name_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.first_name_ent.grid(row=row, column=1, sticky="nsew", pady=10)
+
+        self.last_name_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.last_name_ent.grid(row=row, column=2, sticky="nsew", padx=5, pady=10)
+
+        row += 1
+
+        # Username
+        tk.Label(input_frame, text="Username: *", font=FONTS["m"]).grid(row=row, column=0, sticky="nse", pady=10)
+
+        self.username_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.username_ent.grid(row=row, column=1, columnspan=2, sticky="nsew", pady=10)
+
+        row += 1
+
+        # Address
+        tk.Label(input_frame, text="Address: *", font=FONTS["m"]).grid(row=row, column=0, sticky="nse", pady=10)
+
+        self.addr_l1_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_l1_ent.grid(row=row, column=1, columnspan=2, sticky="nsew", pady=10)
+
+        row += 1
+
+        self.addr_l2_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_l2_ent.grid(row=row, column=1, columnspan=2, sticky="nsew", pady=10)
+
+        row += 1
+
+        self.addr_l3_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_l3_ent.grid(row=row, column=1, columnspan=2, sticky="nsew", pady=10)
+
+        row += 1
+
+        tk.Label(input_frame, text="City *", font=FONTS["m"]).grid(row=row, column=1, sticky="nsew")
+
+        tk.Label(input_frame, text="Post code *", font=FONTS["m"]).grid(row=row, column=2, sticky="nsew")
+
+        row += 1
+
+        self.addr_city_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_city_ent.grid(row=row, column=1, sticky="nsew", pady=10)
+
+        self.addr_post_ent = tk.Entry(input_frame, font=FONTS["m"])
+        self.addr_post_ent.grid(row=row, column=2, sticky="nsew", pady=10, padx=5)
+
+        row += 1
+
+        # Submit
+        tk.Button(input_frame, text="Update", font=FONTS["m"], bg="#00dd00",
+                  command=self.submit).grid(row=row, column=1, columnspan=2, sticky="nsew")
+        row += 1
+
+        # Password Change Button
+        tk.Button(input_frame, text="Update password", font=FONTS["m"], bg="#77aafc",
+                  command=lambda: controller.show_page(AdminPasswordChange.__name__)).grid(row=row, column=1,
+                                                                                           columnspan=2, sticky="nsew")
+
+    def submit(self):
+        """Validate and submit the form"""
+
+        fname = self.first_name_ent.get()
+        lname = self.last_name_ent.get()
+
+        username = self.username_ent.get()
+
+        addr_l1 = self.addr_l1_ent.get()
+        addr_l2 = self.addr_l2_ent.get()
+        addr_l3 = self.addr_l3_ent.get()
+        addr_city = self.addr_city_ent.get()
+        addr_post = self.addr_post_ent.get()
+
+        def verify_data(inp):
+            """Verifies that there is actually data provided rather than an emtpy input field"""
+            if len(inp) > 0:
+                return True
+            else:
+                return False
+
+        run = True
+        kwargs = {}
+
+        if not verify_data(fname):
+            run = False
+            self.first_name_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+        else:
+            self.first_name_ent.configure(highlightthickness=0)
+            kwargs["first_name"] = fname
+
+        if not verify_data(lname):
+            run = False
+            self.last_name_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+        else:
+            self.last_name_ent.configure(highlightthickness=0)
+            kwargs["last_name"] = lname
+
+        if not verify_data(username):
+            run = False
+            self.username_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+        else:
+            self.username_ent.configure(highlightthickness=0)
+            kwargs["username"] = username
+
+        if not verify_data(addr_l1):
+            run = False
+            self.addr_l1_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+        else:
+            self.addr_l1_ent.configure(highlightthickness=0)
+            kwargs["addr_l1"] = addr_l1
+
+        if not verify_data(addr_city):
+            run = False
+            self.addr_city_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+        else:
+            self.addr_city_ent.configure(highlightthickness=0)
+            kwargs["addr_city"] = addr_city
+
+        if not verify_data(addr_post):
+            run = False
+            self.addr_post_ent.configure(highlightbackground="#dd0000", highlightcolor="#dd0000", highlightthickness=2)
+        else:
+            self.addr_post_ent.configure(highlightthickness=0)
+            kwargs["addr_post"] = addr_post
+
+        # Non required fields
+        kwargs["addr_l2"] = addr_l2
+        kwargs["addr_l3"] = addr_l3
+
+        if run:
+            status, reply, admin = SYSTEM.update_admin(SYSTEM.admin.admin_id, **kwargs)
+
+            if status:
+                SYSTEM.admin = admin
+
+                tkmb.showinfo("Success.", "Successfully updated the admin information.")
+                self.controller.show_page(AdminView.__name__)
+            else:
+                self.fail_text.configure(text=reply)
+
+        else:
+            self.fail_text.configure(text="All required fields must be filled.")
+
+    def load_data(self):
+        """Load the admin data into the entry fields"""
+
+        # Clear the fields
+        self.first_name_ent.delete(0, "end")
+        self.last_name_ent.delete(0, "end")
+        self.username_ent.delete(0, "end")
+        self.addr_l1_ent.delete(0, "end")
+        self.addr_l2_ent.delete(0, "end")
+        self.addr_l3_ent.delete(0, "end")
+        self.addr_city_ent.delete(0, "end")
+        self.addr_post_ent.delete(0, "end")
+
+        # Insert data
+        self.first_name_ent.insert(0, str(SYSTEM.admin.first_name))
+        self.last_name_ent.insert(0, str(SYSTEM.admin.last_name))
+        self.username_ent.insert(0, str(SYSTEM.admin.username))
+        self.addr_l1_ent.insert(0, str(SYSTEM.admin.address[0]))
+        if SYSTEM.admin.address[1] is not None:
+            self.addr_l2_ent.insert(0, str(SYSTEM.admin.address[1]))
+        if SYSTEM.admin.address[2]:
+            self.addr_l3_ent.insert(0, str(SYSTEM.admin.address[2]))
+        self.addr_city_ent.insert(0, str(SYSTEM.admin.address[3]))
+        self.addr_post_ent.insert(0, str(SYSTEM.admin.address[4]))
+
+    def page_update(self):
+        """Runs when the page is shown"""
+        # Load new data onto page
+        self.load_data()
+
+
+class AdminPasswordChange(PageBase):
+    """Page for admins to change their password"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        # Title
+        tk.Label(self, text="Password Change", font=FONTS["l"]).pack(side="top", fill="x", pady=5)
+
+        self.fail_text = tk.Label(self, text="", font=FONTS["m"], fg="#dd0000")
+        self.fail_text.pack(side="top", fill="x")
+
+        input_frame = tk.Frame(self)
+        input_frame.pack(side="top", pady=10)
+
+        # Old Password
+        tk.Label(input_frame, text="Current Password: ", font=FONTS["m"]).grid(row=0, column=0, sticky="nse", pady=5)
+
+        self.old_pass_ent = tk.Entry(input_frame, show="*", font=FONTS["m"])
+        self.old_pass_ent.grid(row=0, column=1, sticky="nsew", pady=5)
+
+        # New Password
+        tk.Label(input_frame, text="New Password: ", font=FONTS["m"]).grid(row=1, column=0, sticky="nse", pady=5)
+
+        self.new_pass_ent = tk.Entry(input_frame, show="*", font=FONTS["m"])
+        self.new_pass_ent.grid(row=1, column=1, sticky="nsew", pady=5)
+
+        # Confirm Password
+        tk.Label(input_frame, text="Confirm Password: ", font=FONTS["m"]).grid(row=2, column=0, sticky="nse", pady=5)
+
+        self.conf_pass_ent = tk.Entry(input_frame, show="*", font=FONTS["m"])
+        self.conf_pass_ent.grid(row=2, column=1, sticky="nsew", pady=5)
+
+        # Submit
+        tk.Button(input_frame, text="Update Password", font=FONTS["m"], bg="#00dd00",
+                  command=self.update_password).grid(row=3, column=0, columnspan=2, sticky="nsew")
+
+    def update_password(self):
+        """Submits the data to the BankSystem to verify"""
+        old = self.old_pass_ent.get()
+        new = self.new_pass_ent.get()
+        conf = self.conf_pass_ent.get()
+
+        if len(new) < 8:
+            self.fail_text.configure(text="New password must be 8 characters or longer.")
+            return
+
+        stat, reply = SYSTEM.update_admin_password(old, new, conf)
+
+        if stat:
+            tkmb.showinfo("Success", "Password updated successfully.")
+            self.controller.show_page(AdminView.__name__)
+        else:
+            self.fail_text.configure(text=reply)
+
+    def page_update(self):
+        """Runs when the page is shown"""
+        # Clear fields
+        self.old_pass_ent.delete(0, "end")
+        self.new_pass_ent.delete(0, "end")
+        self.conf_pass_ent.delete(0, "end")
+
+        # Clear fail text
+        self.fail_text.configure(text="")
+
+
+class ReportAll(PageBase):
+    """A page that shows all the reports"""
+    def __init__(self, parent, controller):
+        super().__init__(parent, controller)
+
+        create_navigation_bar(self, controller)
+
+        # Title
+        tk.Label(self, text="Full management report", font=FONTS["l"]).pack(side="top", fill="x", pady=10)
+
+        data_frame = tk.Frame(self)
+        data_frame.pack(side="top", pady=10)
+
+        interest_frame = tk.Frame(data_frame)
+        interest_frame.grid(row=0, column=0, sticky="nsew")
+
+        row = 0
+
+        # Interest
+        tk.Label(interest_frame, text="Interest Report", font=FONTS["l"]).grid(row=row, column=0,
+                                                                           columnspan=3, sticky="nsew")
+
+        row += 1
+
+        #   Accounts
+        tk.Label(interest_frame, text="Accounts: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.interest_accounts = tk.Label(interest_frame, text="", font=FONTS["m"])
+        self.interest_accounts.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Total
+        tk.Label(interest_frame, text="Total Interest (1 year): ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.interest_total = tk.Label(interest_frame, text="", font=FONTS["m"])
+        self.interest_total.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Mean
+        tk.Label(interest_frame, text="Mean interest rate: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.interest_mean = tk.Label(interest_frame, text="", font=FONTS["m"])
+        self.interest_mean.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Highest
+        tk.Label(interest_frame, text="Highest interest: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.interest_highest = tk.Label(interest_frame, text="", font=FONTS["m"])
+        self.interest_highest.grid(row=row, column=1, sticky="nsw")
+
+        self.interest_high_button = tk.Button(interest_frame, text="View Account", font=FONTS["m"])
+        self.interest_high_button.grid(row=row, column=2, sticky="nsew")
+
+        row += 1
+
+        #   Lowest
+        tk.Label(interest_frame, text="Lowest interest: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.interest_lowest = tk.Label(interest_frame, text="", font=FONTS["m"])
+        self.interest_lowest.grid(row=row, column=1, sticky="nsw")
+
+        self.interest_low_button = tk.Button(interest_frame, text="View Account", font=FONTS["m"])
+        self.interest_low_button.grid(row=row, column=2, sticky="nsew")
+
+        # Separate
+        ttk.Separator(data_frame, orient="vertical").grid(row=0, column=1, sticky="nsew", padx=5)
+
+
+        # Balance
+        balance_frame = tk.Frame(data_frame)
+        balance_frame.grid(row=0, column=2, sticky="nsew")
+
+        row = 0
+
+        tk.Label(balance_frame, text="Balance Report", font=FONTS["l"]).grid(row=row, column=0,
+                                                                             columnspan=3, sticky="nsew")
+
+        row += 1
+
+        #   Accounts
+        tk.Label(balance_frame, text="Accounts: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.balance_accounts = tk.Label(balance_frame, text="", font=FONTS["m"])
+        self.balance_accounts.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Total
+        tk.Label(balance_frame, text="Total balances: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.balance_total = tk.Label(balance_frame, text="", font=FONTS["m"])
+        self.balance_total.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Mean
+        tk.Label(balance_frame, text="Mean balance: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.balance_mean = tk.Label(balance_frame, text="", font=FONTS["m"])
+        self.balance_mean.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Highest
+        tk.Label(balance_frame, text="Highest balance: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.balance_highest = tk.Label(balance_frame, text="", font=FONTS["m"])
+        self.balance_highest.grid(row=row, column=1, sticky="nsw")
+
+        self.balance_high_button = tk.Button(balance_frame, text="View Account", font=FONTS["m"])
+        self.balance_high_button.grid(row=row, column=2, sticky="nsew")
+
+        row += 1
+
+        #   Lowest
+        tk.Label(balance_frame, text="Lowest balance: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.balance_lowest = tk.Label(balance_frame, text="", font=FONTS["m"])
+        self.balance_lowest.grid(row=row, column=1, sticky="nsw")
+
+        self.balance_low_button = tk.Button(balance_frame, text="View Account", font=FONTS["m"])
+        self.balance_low_button.grid(row=row, column=2, sticky="nsew")
+
+        # Separate
+        ttk.Separator(data_frame, orient="horizontal").grid(row=1, column=0, columnspan=3, sticky="nsew", pady=5)
+
+        # Overdraft
+        overdraft_frame = tk.Frame(data_frame)
+        overdraft_frame.grid(row=2, column=0, columnspan=2, sticky="nsew")
+
+        row = 0
+
+        # Title
+        tk.Label(overdraft_frame, text="Overdraft Report", font=FONTS["l"]).grid(row=row, column=0,
+                                                                                 columnspan=3, sticky="nsew")
+
+        row += 1
+
+        #   Accounts
+        tk.Label(overdraft_frame, text="Accounts: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.overdraft_accounts = tk.Label(overdraft_frame, text="", font=FONTS["m"])
+        self.overdraft_accounts.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Total
+        tk.Label(overdraft_frame, text="Total Overdrafts: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.overdraft_total = tk.Label(overdraft_frame, text="", font=FONTS["m"])
+        self.overdraft_total.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Mean
+        tk.Label(overdraft_frame, text="Mean overdrafts: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.overdraft_mean = tk.Label(overdraft_frame, text="", font=FONTS["m"])
+        self.overdraft_mean.grid(row=row, column=1, sticky="nsw")
+
+        row += 1
+
+        #   Highest
+        tk.Label(overdraft_frame, text="Highest overdraft: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.overdraft_highest = tk.Label(overdraft_frame, text="", font=FONTS["m"])
+        self.overdraft_highest.grid(row=row, column=1, sticky="nsw")
+
+        self.overdraft_high_button = tk.Button(overdraft_frame, text="View Account", font=FONTS["m"])
+        self.overdraft_high_button.grid(row=row, column=2, sticky="nsew")
+
+        row += 1
+
+        #   Lowest
+        tk.Label(overdraft_frame, text="Lowest overdraft: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+        self.overdraft_lowest = tk.Label(overdraft_frame, text="", font=FONTS["m"])
+        self.overdraft_lowest.grid(row=row, column=1, sticky="nsw")
+
+        self.overdraft_low_button = tk.Button(overdraft_frame, text="View Account", font=FONTS["m"])
+        self.overdraft_low_button.grid(row=row, column=2, sticky="nsew")
+
+        # Separator
+        ttk.Separator(data_frame, orient="vertical").grid(row=2, column=1, sticky="nsew", padx=5)
+
+        # Customers report
+        customers_frame = tk.Frame(data_frame)
+        customers_frame.grid(row=2, column=2, sticky="nsew")
+
+        row = 0
+
+        # title
+        tk.Label(customers_frame, text="Customers Report", font=FONTS["l"]).grid(row=row, column=0,
+                                                                                 columnspan=2, sticky="nsew")
+
+        row += 1
+
+        # Customer total
+        tk.Label(customers_frame, text="Customers: ", font=FONTS["m"]).grid(row=row, column=0, sticky="nse")
+
+        self.customers = tk.Label(customers_frame, text="", font=FONTS["m"])
+        self.customers.grid(row=row, column=1)
+
+    def load_interest(self):
+        """Get interest report, then populate data fields"""
+        data = SYSTEM.interest_report()
+
+        self.interest_accounts.configure(text=str(data["accounts_pop"]))
+        self.interest_total.configure(text=str(round(data["interest_gained"] / 100, 2)))
+        self.interest_mean.configure(text=str(round(data["mean"], 2)))
+
+        self.interest_highest.configure(text=str(data["highest"].interest_rate) + "%")
+        self.interest_high_button.configure(command=lambda hid=data["highest"].account_id: self.show_account(hid))
+
+        self.interest_lowest.configure(text=str(data["lowest"].interest_rate) + "%")
+        self.interest_low_button.configure(command=lambda lid=data["lowest"].account_id: self.show_account(lid))
+
+    def load_balance(self):
+        """Get interest report, then populate data fields"""
+        data = SYSTEM.balance_report()
+
+        self.balance_accounts.configure(text=str(data["accounts_pop"]))
+        self.balance_total.configure(text="£" + str(round(data["total"] / 100, 2)))
+        self.balance_mean.configure(text="£" + str(round(data["mean"] / 100, 2)))
+
+        self.balance_highest.configure(text="£" + str(data["highest"].balance / 100))
+        self.balance_high_button.configure(command=lambda hid=data["highest"].account_id: self.show_account(hid))
+
+        self.balance_lowest.configure(text="£" + str(data["lowest"].balance / 100))
+        self.balance_low_button.configure(command=lambda lid=data["lowest"].account_id: self.show_account(lid))
+
+    def load_overdraft(self):
+        """Load the overdraft data in"""
+        data = SYSTEM.overdraft_report()
+
+        self.overdraft_accounts.configure(text=str(data["accounts_pop"]))
+        self.overdraft_total.configure(text="£" + str(round(data["total"] / 100, 2)))
+        self.overdraft_mean.configure(text="£" + str(round(data["mean"] / 100, 2)))
+
+        self.overdraft_highest.configure(text="£" + str(data["highest"].overdraft_limit / 100))
+        self.overdraft_high_button.configure(command=lambda hid=data["highest"].account_id: self.show_account(hid))
+
+        self.overdraft_lowest.configure(text="£" + str(data["lowest"].overdraft_limit / 100))
+        self.overdraft_low_button.configure(command=lambda lid=data["lowest"].account_id: self.show_account(lid))
+
+    def load_customers(self):
+        """Get the customers report and load the data onto the page"""
+        data = SYSTEM.customer_report()
+
+        self.customers.configure(text=str(data["customers_pop"]))
+
+    def show_account(self, accid):
+        """Shows the account page with the given user loaded"""
+        self.controller.Pages[AccountView.__name__].load_account_info(accid)
+        self.controller.show_page(AccountView.__name__)
+
+    def page_update(self):
+        """Runs everytime the page is opened"""
+        self.load_interest()
+        self.load_balance()
+        self.load_overdraft()
+        self.load_customers()
+
+
+
+
+# TODO: If time permits, add all the customers accounts as a pre-fill options in the transfer page
+
 # TODO: Alter the rights restrictions on certain functions, cross reference this with moodle docs
 # TODO: GUI tweaks.
+
 
 if __name__ == "__main__":
     win = Window()
